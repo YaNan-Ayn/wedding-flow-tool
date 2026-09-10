@@ -370,37 +370,148 @@ function restore(){
 }
 
 /* ---------- 导出 ---------- */
-function showPreview(dataUrl){
-  const isTouch = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
+/* 多图床轮询上传（60分钟内有效），使微信/手机浏览器可长按保存或转发图片；全部失败返回 null */
+async function uploadTmp(blob){
+  const name = 'wedding-flow.png';
+  const fetchT = async function(url, opt){
+    const ctrl = new AbortController();
+    const timer = setTimeout(function(){ ctrl.abort(); }, 7000);
+    try{
+      const r = await fetch(url, Object.assign({signal:ctrl.signal}, opt));
+      const t = await r.text();
+      return {status:r.status, text:t};
+    }catch(e){
+      return null;
+    }finally{
+      clearTimeout(timer);
+    }
+  };
+  // 1) catbox.moe
+  try{
+    const fd = new FormData();
+    fd.append('reqtype','fileupload');
+    fd.append('fileToUpload', blob, name);
+    const r = await fetchT('https://catbox.moe/user/api.php', {method:'POST', body:fd});
+    if (r && r.status === 200 && r.text.indexOf('http') === 0) return r.text.trim();
+  }catch(e){}
+  // 2) telegra.ph
+  try{
+    const fd = new FormData();
+    fd.append('file', blob, name);
+    const r = await fetchT('https://telegra.ph/upload', {method:'POST', body:fd});
+    if (r && r.status === 200){
+      const j = JSON.parse(r.text);
+      if (j && j[0] && j[0].src) return 'https://telegra.ph' + j[0].src;
+    }
+  }catch(e){}
+  // 3) uguu.se
+  try{
+    const fd = new FormData();
+    fd.append('files[]', blob, name);
+    const r = await fetchT('https://uguu.se/upload?output=json', {method:'POST', body:fd});
+    if (r && r.status === 200){
+      const j = JSON.parse(r.text);
+      if (j && j.success && j.files && j.files[0] && j.files[0].url) return j.files[0].url;
+    }
+  }catch(e){}
+  // 4) imgse.com 路过图床（国内可达性较好）
+  try{
+    const fd = new FormData();
+    fd.append('source', blob, name);
+    fd.append('type','file');
+    fd.append('action','upload');
+    const r = await fetchT('https://imgse.com/api/1/upload', {method:'POST', body:fd});
+    if (r && r.status === 200){
+      const j = JSON.parse(r.text);
+      if (j && j.success && j.data && j.data.url) return j.data.url;
+    }
+  }catch(e){}
+  // 5) api.oioweb.cn
+  try{
+    const fd = new FormData();
+    fd.append('image', blob, name);
+    const r = await fetchT('https://api.oioweb.cn/api/common/imgur', {method:'POST', body:fd});
+    if (r && r.status === 200){
+      const j = JSON.parse(r.text);
+      if (j && j.code === 200 && j.data && j.data.url) return j.data.url;
+    }
+  }catch(e){}
+  // 6) tmpfiles.org（兜底：其链接为下载页，供"在新页面打开"下载）
+  try{
+    const fd = new FormData();
+    fd.append('file', blob, name);
+    const r = await fetchT('https://tmpfiles.org/api/v1/upload', {method:'POST', body:fd});
+    if (r && r.status === 200){
+      const j = JSON.parse(r.text);
+      if (j && j.status === 'success' && j.data && j.data.url) return j.data.url;
+    }
+  }catch(e){}
+  return null;
+}
+
+function showPreview(src, isMobile, blob, dataUrl){
   const mask = document.createElement('div');
   mask.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;';
   const img = document.createElement('img');
-  img.src = dataUrl;
+  img.src = src;
   img.style.cssText = 'max-width:92%;max-height:64%;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.5);';
+  // 网络图加载失败时回退本地 dataURL，保证始终能看到成品图
+  img.onerror = function(){
+    if (dataUrl && img.src.indexOf('data:') !== 0) img.src = dataUrl;
+  };
   const tip = document.createElement('div');
   tip.style.cssText = 'color:#fff;font-size:14px;text-align:center;line-height:1.9;';
-  tip.innerHTML = isTouch
-    ? '<b style="font-size:16px;">长按上方图片</b><br>即可保存到相册、或分享给微信好友'
-    : '已生成导出图片，已开始下载<br>若未自动下载，请右键图片另存为';
   const btns = document.createElement('div');
-  btns.style.cssText = 'display:flex;gap:10px;';
+  btns.style.cssText = 'display:flex;flex-wrap:wrap;gap:10px;justify-content:center;';
+  const mkBtn = function(text, fn){
+    const b = document.createElement('button');
+    b.textContent = text;
+    b.style.cssText = 'background:rgba(255,255,255,.92);border:none;border-radius:6px;padding:10px 18px;font-size:14px;cursor:pointer;';
+    b.onclick = fn;
+    return b;
+  };
   const openBtn = document.createElement('a');
-  openBtn.textContent = '在新页面打开图片';
-  openBtn.href = dataUrl;
+  openBtn.textContent = '在新页面打开';
+  openBtn.href = src;
   openBtn.target = '_blank';
   openBtn.rel = 'noopener';
   openBtn.style.cssText = 'background:rgba(255,255,255,.92);border:none;border-radius:6px;padding:10px 18px;font-size:14px;cursor:pointer;text-decoration:none;color:#111;';
-  const close = document.createElement('button');
-  close.textContent = '关闭';
-  close.style.cssText = 'background:rgba(255,255,255,.92);border:none;border-radius:6px;padding:10px 26px;font-size:14px;cursor:pointer;';
+  const close = mkBtn('关闭', function(){ mask.remove(); });
   mask.appendChild(img);
   mask.appendChild(tip);
   mask.appendChild(btns);
-  btns.appendChild(openBtn);
-  btns.appendChild(close);
-  close.onclick = function(){ mask.remove(); };
   mask.onclick = function(e){ if (e.target === mask) mask.remove(); };
   document.body.appendChild(mask);
+
+  if (isMobile){
+    const viaHttp = src.indexOf('http') === 0;
+    tip.innerHTML = viaHttp
+      ? '<b style="font-size:16px;">长按上方图片</b><br>保存到相册 / 分享给微信好友<br><span style="font-size:12px;opacity:.75;">图片已生成临时链接，请尽快保存</span>'
+      : '<b style="font-size:16px;">长按上方图片</b><br>保存到相册 / 分享给微信好友<br><span style="font-size:12px;opacity:.75;">若长按无反应，可截图保存或点下方"保存图片"</span>';
+    // 保存图片（浏览器支持下载时生效）
+    const saveBtn = document.createElement('a');
+    saveBtn.textContent = '保存图片';
+    saveBtn.href = src;
+    saveBtn.download = '婚礼流程单.png';
+    saveBtn.style.cssText = openBtn.style.cssText;
+    btns.appendChild(saveBtn);
+    // 分享图片（系统分享，可直接分享到微信）
+    try{
+      if (blob && navigator.canShare){
+        const f = new File([blob], '婚礼流程单.png', {type:'image/png'});
+        if (navigator.canShare({files:[f]})){
+          const shareBtn = mkBtn('分享图片', function(){
+            navigator.share({files:[f], title:'婚礼流程单'}).catch(function(){});
+          });
+          btns.appendChild(shareBtn);
+        }
+      }
+    }catch(e){}
+  } else {
+    tip.innerHTML = '已生成导出图片，已开始下载<br>若未自动下载，请右键图片另存为';
+  }
+  btns.appendChild(openBtn);
+  btns.appendChild(close);
 }
 
 $('#btn_export').addEventListener('click', async function(){
@@ -414,8 +525,12 @@ $('#btn_export').addEventListener('click', async function(){
     const dataUrl = canvas.toDataURL('image/png');
     const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
     if (isMobile){
-      // 手机/平板：不自动下载（浏览器不支持），直接弹出大图——长按保存相册 / 分享微信好友
-      showPreview(dataUrl);
+      // 手机/平板：不自动下载（浏览器不支持），转临时链接后弹大图——长按保存相册 / 分享微信好友
+      canvas.toBlob(async function(blob){
+        let httpUrl = null;
+        if (blob) httpUrl = await uploadTmp(blob);
+        showPreview(httpUrl || dataUrl, true, blob || null, dataUrl);
+      }, 'image/png');
     } else {
       // 电脑：优先自动下载
       try{
@@ -440,7 +555,7 @@ $('#btn_export').addEventListener('click', async function(){
         setTimeout(function(){ link.remove(); }, 1000);
       }catch(e){}
       // 兜底：弹出预览图（可右键保存）
-      setTimeout(function(){ showPreview(dataUrl); }, 350);
+      setTimeout(function(){ showPreview(dataUrl, false, null, dataUrl); }, 350);
     }
   }catch(err){
     alert('导出失败，请检查网络后重试。\n' + err.message);
