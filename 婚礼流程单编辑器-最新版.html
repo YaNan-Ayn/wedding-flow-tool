@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>婚礼流程单编辑器</title>
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=ZCOOL+XiaoWei&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Noto Serif SC','Songti SC','SimSun',serif;background:#f0ece6;color:#1a1a1a;}
+  .wrap{max-width:1060px;margin:0 auto;padding:24px 16px 60px;display:flex;flex-direction:column;gap:28px;}
+  @media(min-width:1024px){.wrap{flex-direction:row;align-items:flex-start;}}
+
+  /* ===== 控制面板 ===== */
+  .panel{width:100%;background:#fff;border-radius:14px;padding:22px 22px 26px;box-shadow:0 6px 20px rgba(0,0,0,.06);flex-shrink:0;}
+  @media(min-width:1024px){.panel{width:340px;position:sticky;top:16px;}}
+  .panel h2{font-size:17px;font-weight:600;letter-spacing:.5px;margin-bottom:2px;}
+  .panel .sub{font-size:12px;color:#9a9a9a;margin-bottom:16px;}
+  .sec-title{font-size:13px;font-weight:600;color:#4a4a4a;margin:16px 0 8px;padding-top:14px;border-top:1px solid #efefef;}
+  .sec-title:first-of-type{border-top:none;padding-top:0;margin-top:0;}
+  .lbl{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#555;margin-bottom:5px;}
+  .lbl b{font-weight:600;color:#333;}
+  .lbl .val{color:#8a8a8a;font-variant-numeric:tabular-nums;}
+  input[type=text],textarea,select{
+    width:100%;border:1px solid #e2e2e2;border-radius:8px;padding:8px 10px;font-size:13px;
+    font-family:inherit;color:#333;background:#fff;outline:none;transition:border-color .15s;
+  }
+  input[type=text]:focus,textarea:focus,select:focus{border-color:#8a8a8a;}
+  textarea{resize:vertical;line-height:1.6;}
+  input[type=range]{width:100%;accent-color:#111;height:22px;}
+  .row{display:flex;align-items:center;gap:8px;font-size:13px;color:#444;margin-top:10px;}
+  .row input[type=checkbox]{width:15px;height:15px;accent-color:#111;}
+  .btn{
+    display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+    background:#111;color:#fff;border:none;border-radius:9px;padding:12px;font-size:14px;
+    font-family:inherit;font-weight:500;cursor:pointer;transition:opacity .15s;margin-top:16px;
+  }
+  .btn:hover{opacity:.85;}
+  .btn:disabled{opacity:.5;cursor:wait;}
+  .file-hint{font-size:11.5px;color:#9a9a9a;margin-top:6px;line-height:1.6;}
+
+  /* ===== 预览卡片（导出即为下图） ===== */
+  .preview-box{flex:1;min-width:0;}
+  .preview-box>h3{font-size:16px;font-weight:600;margin-bottom:12px;text-align:center;}
+  @media(min-width:1024px){.preview-box>h3{text-align:left;}}
+  .preview-frame{background:#e7e2da;border-radius:14px;padding:26px 16px;overflow:auto;display:flex;justify-content:center;}
+  .card{
+    width:420px;min-height:690px;background:#ffffff;padding:30px 34px 18px;position:relative;
+    box-shadow:0 14px 40px rgba(0,0,0,.12);flex-shrink:0;
+    font-family:'Noto Serif SC','Songti SC','SimSun',serif;
+  }
+  .topright{text-align:right;letter-spacing:2px;}
+  .en-kicker{font-size:7px;color:#9a9a9a;line-height:1.5;letter-spacing:4px;font-weight:700;}
+  .cname{font-size:19px;font-weight:600;color:#141414;margin-top:10px;letter-spacing:1px;}
+  .cinfo{font-size:8.5px;color:#7a7a7a;margin-top:5px;letter-spacing:.5px;}
+  .cinfo#out_hotel{font-size:9.5px;}
+
+  .mid{position:relative;margin-top:28px;}
+  /* 左侧照片：黑色线框，框顶高于右侧标题，框底精确对齐备注末行；框内上 1/4 留白、下 3/4 照片置底 */
+  .photo{position:absolute;left:0;top:-16px;bottom:0;width:128px;}
+  .photo .ph-wrap{
+    width:128px;height:100%;border:1px solid #111;overflow:hidden;background:#fff;
+    display:flex;flex-direction:column;justify-content:flex-end;
+  }
+  /* 照片层：可拖动照片（电脑鼠标 + 手机触屏）；img 按原图分辨率渲染，导出清晰 */
+  .photo .ph-img{
+    position:relative;width:100%;height:75%;overflow:hidden;cursor:grab;display:none;
+    touch-action:none;-webkit-user-select:none;user-select:none;
+  }
+  .photo .ph-img.dragging{cursor:grabbing;}
+  .photo .ph-img img{position:absolute;display:block;max-width:none;-webkit-user-drag:none;user-drag:none;}
+  .photo .ph-ph{
+    width:100%;height:75%;display:flex;align-items:center;justify-content:center;
+    color:#c9c4bc;font-size:12px;background:#faf9f6;letter-spacing:2px;
+  }
+
+  .flow{margin-left:156px;text-align:right;}
+  .flow-title{font-size:17px;font-weight:600;color:#141414;letter-spacing:1px;}
+  .flow-en{font-size:6.5px;color:#9a9a9a;letter-spacing:3px;margin:5px 0 14px;font-weight:700;}
+  .flow-list{color:#333;line-height:1.5;}
+  .flow-list .item{padding:2px 0;}
+  .footnote{margin-top:26px;text-align:right;font-size:12px;color:#8a8a8a;line-height:1.6;letter-spacing:.5px;}
+
+  .slogan{margin-top:66px;text-align:center;font-size:7.5px;color:#6f6f6f;letter-spacing:3px;white-space:nowrap;overflow:hidden;width:100%;}
+  .slogan-en{margin-top:9px;text-align:center;font-size:5px;color:#a8a8a8;letter-spacing:1.5px;line-height:1.2;white-space:nowrap;overflow:hidden;width:100%;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===== 控制面板 ===== -->
+  <div class="panel">
+    <h2>婚礼流程单编辑器</h2>
+    <p class="sub">修改左侧参数，右侧实时预览；数据自动保存在本机浏览器</p>
+
+    <div class="sec-title">基本信息</div>
+    <div style="margin-bottom:10px;">
+      <label class="lbl"><b>新人名字</b></label>
+      <input type="text" id="inp_name" value="新郎小张 新娘小苏">
+    </div>
+    <div style="margin-bottom:10px;">
+      <label class="lbl"><b>酒店名称</b></label>
+      <input type="text" id="inp_hotel" value="XXXX大酒店">
+    </div>
+    <div style="margin-bottom:10px;">
+      <label class="lbl"><b>婚礼日期</b></label>
+      <input type="text" id="inp_date" value="2026.12.12">
+    </div>
+    <div>
+      <label class="lbl"><b>流程清单</b><span class="val">每行一项</span></label>
+      <textarea id="inp_flow" rows="11">主持人登场
+父母入场
+开场白
+新郎入场
+新娘入场（父母开门）
+交接
+共同入场
+誓言
+戒指（小朋友）
+敬茶
+送花（两位妈妈）
+碰杯酒
+结束语
+大合影
+全家人合影</textarea>
+    </div>
+
+    <div class="sec-title">底部文案</div>
+    <div style="margin-bottom:10px;">
+      <label class="lbl"><b>左下角备注</b><span class="val">每行一项</span></label>
+      <textarea id="inp_foot" rows="5">婚礼流程
+从来不是一成不变的
+如果有任何想法或者变更
+随时联系
+期待你们精彩的仪式</textarea>
+    </div>
+    <div style="margin-bottom:10px;">
+      <label class="lbl"><b>中文祝福语</b></label>
+      <input type="text" id="inp_slogan" value="成为彼此的光和热爱，每个人都会闪闪发光">
+    </div>
+    <div>
+      <label class="lbl"><b>英文祝福语</b></label>
+      <textarea id="inp_sloganEn" rows="2">YOU GUYS ARE GONNA BE AMAZING THAT DAY, AND EVERYONE'S GONNA</textarea>
+    </div>
+
+    <div class="sec-title">文字样式</div>
+    <div style="margin-bottom:12px;">
+      <label class="lbl"><b>字体</b></label>
+      <select id="inp_font">
+        <option value="'Noto Serif SC','Songti SC','SimSun',serif">思源宋体（高级感）</option>
+        <option value="'ZCOOL XiaoWei','Noto Serif SC','Songti SC',serif">站酷小薇（文艺）</option>
+        <option value="Georgia,'Times New Roman','Songti SC',serif">经典衬线</option>
+        <option value="'KaiTi','STKaiti','楷体',serif">楷体</option>
+        <option value="'Microsoft YaHei','PingFang SC',sans-serif">微软雅黑（现代）</option>
+      </select>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="lbl"><b>字号（流程文字）</b><span class="val" id="val_size">16px</span></label>
+      <input type="range" id="inp_size" min="6" max="20" value="10">
+    </div>
+    <div>
+      <label class="lbl"><b>透明度（流程文字）</b><span class="val" id="val_opacity">100%</span></label>
+      <input type="range" id="inp_opacity" min="30" max="100" value="90">
+    </div>
+
+    <div class="sec-title">左侧照片</div>
+    <div>
+      <label class="lbl"><b>上传照片</b></label>
+      <input type="file" id="inp_photo" accept="image/*" style="font-size:12px;">
+      <label class="row"><input type="checkbox" id="inp_bw">黑白滤镜（参考图风格）</label>
+      <p class="file-hint">上传后在预览卡片上按住照片拖动，可调整照片显示位置（双击照片回到居中）。</p>
+    </div>
+
+    <button class="btn" id="btn_export">导出高清图片</button>
+  </div>
+
+  <!-- ===== 预览卡片 ===== -->
+  <div class="preview-box">
+    <h3>预览（导出即为下图）</h3>
+    <div class="preview-frame">
+      <div id="captureDom" class="card">
+        <div class="topright">
+          <div class="en-kicker">WEDDING HOST</div>
+          <div class="en-kicker">CEREMONY</div>
+          <div class="cname" id="out_name">新郎小张 新娘小苏</div>
+          <div class="cinfo" id="out_hotel">XXXX大酒店</div>
+          <div class="cinfo" id="out_date">2026.12.12</div>
+        </div>
+
+        <div class="mid">
+          <div class="photo">
+            <div class="ph-wrap">
+              <div class="ph-ph" id="photoPh">上传左侧照片</div>
+              <div class="ph-img" id="photoImg"><img id="photoImgEl" alt="" draggable="false"></div>
+            </div>
+          </div>
+          <div class="flow" id="flowWrap">
+            <div class="flow-title">婚礼仪式基础流程</div>
+            <div class="flow-en">WEDDING CEREMONY</div>
+            <div class="flow-list" id="out_flow"></div>
+            <div class="footnote" id="out_foot"></div>
+          </div>
+        </div>
+
+        <div class="slogan" id="out_slogan">“成为彼此的光和热爱，每个人都会闪闪发光”</div>
+        <div class="slogan-en" id="out_sloganEn">YOU GUYS ARE GONNA BE AMAZING THAT DAY, AND EVERYONE'S GONNA</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const SAVE_KEY = 'weddingFlowEditor_v3';
+
+/* ---------- 状态 ---------- */
+let rawPhoto = null;          // 原始照片 dataURL（未加滤镜）
+let dragging = false, sx = 0, sy = 0, posX = 50, posY = 50;
+let imgW = 0, imgH = 0;       // cover 放大后的照片尺寸（px）
+
+/* ---------- 渲染 ---------- */
+function render(){
+  $('#out_name').textContent = $('#inp_name').value;
+  $('#out_hotel').textContent = $('#inp_hotel').value;
+  $('#out_date').textContent = $('#inp_date').value;
+  $('#out_slogan').textContent = '“' + $('#inp_slogan').value.trim() + '”';
+
+  // 英文祝福语：强制单行 + 动态缩小字号，确保完整显示不换行
+  const en = $('#out_sloganEn');
+  en.textContent = ($('#inp_sloganEn').value || '').replace(/\s+/g, ' ').trim();
+  let fsz = 5;
+  while (en.scrollWidth > en.clientWidth && fsz > 4){
+    fsz -= 0.2;
+    en.style.fontSize = fsz + 'px';
+  }
+
+  // 中文祝福语：缩小字号，宽度不超过英文行（中文比英文短）
+  const cn = $('#out_slogan');
+  cn.style.fontSize = '7.5px';
+  let csz = 7.5;
+  while (cn.scrollWidth > en.clientWidth && csz > 5){
+    csz -= 0.2;
+    cn.style.fontSize = csz + 'px';
+  }
+
+  // 流程列表
+  const items = $('#inp_flow').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  $('#out_flow').innerHTML = items.map(i=>'<div class="item">'+i+'</div>').join('');
+
+  // 左下角备注
+  const foots = $('#inp_foot').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  $('#out_foot').innerHTML = foots.map(i=>'<div>'+i+'</div>').join('');
+
+  // 样式
+  const ff = $('#inp_font').value;
+  const fs = +$('#inp_size').value;
+  const op = $('#inp_opacity').value / 100;
+  $('#captureDom').style.fontFamily = ff;
+  $('#flowWrap').style.fontSize = fs + 'px';
+  $('#flowWrap').style.opacity = op;
+  $('#out_foot').style.fontSize = Math.max(11, fs - 5) + 'px';
+  $('#out_foot').style.opacity = op;
+  $('#val_size').textContent = fs + 'px';
+  $('#val_opacity').textContent = Math.round(op * 100) + '%';
+}
+
+/* ---------- 照片：黑白滤镜（Canvas 灰度处理，导出效果一致） ---------- */
+function applyPhoto(){
+  const img = new Image();
+  img.onload = function(){
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth;
+    c.height = img.naturalHeight;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    if ($('#inp_bw').checked){
+      const id = ctx.getImageData(0, 0, c.width, c.height);
+      const d = id.data;
+      for (let i = 0; i < d.length; i += 4){
+        const g = d[i]*0.299 + d[i+1]*0.587 + d[i+2]*0.114;
+        d[i] = d[i+1] = d[i+2] = g;
+      }
+      ctx.putImageData(id, 0, 0);
+    }
+    const photoImg = $('#photoImg');
+    const photoImgEl = $('#photoImgEl');
+    photoImgEl.src = c.toDataURL('image/png');
+    photoImg.style.display = 'block';
+    $('#photoPh').style.display = 'none';
+    // cover 放大：照片按原图比例放大铺满容器；额外放大 2% 确保完全覆盖、不留白缝
+    const cw = photoImg.clientWidth, ch = photoImg.clientHeight;
+    const scale = Math.max(cw / img.naturalWidth, ch / img.naturalHeight) * 1.02;
+    imgW = img.naturalWidth * scale;
+    imgH = img.naturalHeight * scale;
+    photoImgEl.style.width = imgW + 'px';
+    photoImgEl.style.height = imgH + 'px';
+    positionPhoto();
+    save();
+  };
+  img.onerror = function(){ alert('图片读取失败，请换一张重试。'); };
+  if (rawPhoto) img.src = rawPhoto;
+}
+
+/* ---------- 照片定位与拖拽平移（电脑鼠标 + 手机触屏） ---------- */
+const photoImg = $('#photoImg');
+const photoImgEl = $('#photoImgEl');
+function positionPhoto(){
+  const cw = photoImg.clientWidth, ch = photoImg.clientHeight;
+  photoImgEl.style.left = (cw - imgW) * posX / 100 + 'px';
+  photoImgEl.style.top = (ch - imgH) * posY / 100 + 'px';
+}
+function startDrag(cx, cy){ dragging = true; sx = cx; sy = cy; photoImg.classList.add('dragging'); }
+function moveDrag(cx, cy){
+  if (!dragging) return;
+  const dx = cx - sx, dy = cy - sy;
+  sx = cx; sy = cy;
+  const w = photoImg.clientWidth, h = photoImg.clientHeight;
+  if (imgW > w) posX = Math.max(0, Math.min(100, posX + dx / (imgW - w) * 100));
+  if (imgH > h) posY = Math.max(0, Math.min(100, posY + dy / (imgH - h) * 100));
+  positionPhoto();
+}
+function endDrag(){ dragging = false; photoImg.classList.remove('dragging'); }
+
+// 鼠标
+photoImg.addEventListener('mousedown', function(e){ e.preventDefault(); startDrag(e.clientX, e.clientY); });
+window.addEventListener('mousemove', function(e){ moveDrag(e.clientX, e.clientY); });
+window.addEventListener('mouseup', function(){ endDrag(); save(); });
+// 触屏
+photoImg.addEventListener('touchstart', function(e){ const t = e.touches[0]; startDrag(t.clientX, t.clientY); }, {passive:false});
+photoImg.addEventListener('touchmove', function(e){ e.preventDefault(); const t = e.touches[0]; moveDrag(t.clientX, t.clientY); }, {passive:false});
+photoImg.addEventListener('touchend', function(){ endDrag(); save(); });
+// 双击回到居中
+photoImg.addEventListener('dblclick', function(){
+  posX = 50; posY = 50;
+  positionPhoto();
+  save();
+});
+
+/* ---------- 自动保存 / 恢复 ---------- */
+function save(){
+  const data = {
+    name:$('#inp_name').value, hotel:$('#inp_hotel').value, date:$('#inp_date').value,
+    flow:$('#inp_flow').value, foot:$('#inp_foot').value, slogan:$('#inp_slogan').value,
+    sloganEn:$('#inp_sloganEn').value, font:$('#inp_font').value, size:$('#inp_size').value,
+    opacity:$('#inp_opacity').value, bw:$('#inp_bw').checked,
+    px:posX, py:posY, photo:rawPhoto
+  };
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(data)); }catch(e){}
+}
+function restore(){
+  try{
+    const d = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if (!d) return;
+    $('#inp_name').value = d.name || $('#inp_name').value;
+    $('#inp_hotel').value = d.hotel || $('#inp_hotel').value;
+    $('#inp_date').value = d.date || $('#inp_date').value;
+    $('#inp_flow').value = d.flow || $('#inp_flow').value;
+    $('#inp_foot').value = d.foot || $('#inp_foot').value;
+    $('#inp_slogan').value = d.slogan || $('#inp_slogan').value;
+    $('#inp_sloganEn').value = d.sloganEn || $('#inp_sloganEn').value;
+    if (d.font) $('#inp_font').value = d.font;
+    if (d.size) $('#inp_size').value = d.size;
+    if (d.opacity) $('#inp_opacity').value = d.opacity;
+    $('#inp_bw').checked = d.bw === true;
+    if (typeof d.px === 'number') posX = d.px;
+    if (typeof d.py === 'number') posY = d.py;
+    if (d.photo){ rawPhoto = d.photo; applyPhoto(); }
+  }catch(e){}
+}
+
+/* ---------- 导出 ---------- */
+/* 多图床轮询上传（60分钟内有效），使微信/手机浏览器可长按保存或转发图片；全部失败返回 null */
+async function uploadTmp(blob){
+  const name = 'wedding-flow.png';
+  const fetchT = async function(url, opt){
+    const ctrl = new AbortController();
+    const timer = setTimeout(function(){ ctrl.abort(); }, 7000);
+    try{
+      const r = await fetch(url, Object.assign({signal:ctrl.signal}, opt));
+      const t = await r.text();
+      return {status:r.status, text:t};
+    }catch(e){
+      return null;
+    }finally{
+      clearTimeout(timer);
+    }
+  };
+  // 1) catbox.moe
+  try{
+    const fd = new FormData();
+    fd.append('reqtype','fileupload');
+    fd.append('fileToUpload', blob, name);
+    const r = await fetchT('https://catbox.moe/user/api.php', {method:'POST', body:fd});
+    if (r && r.status === 200 && r.text.indexOf('http') === 0) return r.text.trim();
+  }catch(e){}
+  // 2) telegra.ph
+  try{
+    const fd = new FormData();
+    fd.append('file', blob, name);
+    const r = await fetchT('https://telegra.ph/upload', {method:'POST', body:fd});
+    if (r && r.status === 200){
+      const j = JSON.parse(r.text);
+      if (j && j[0] && j[0].src) return 'https://telegra.ph' + j[0].src;
+    }
+  }catch(e){}
+  // 3) uguu.se
+  try{
+    const fd = new FormData();
+    fd.append('files[]', blob, name);
+    const r = await fetchT('https://uguu.se/upload?output=json', {method:'POST', body:fd});
+    if (r && r.status === 200){
+      const j = JSON.parse(r.text);
+      if (j && j.success && j.files && j.files[0] && j.files[0].url) return j.files[0].url;
+    }
+  }catch(e){}
+  // 4) imgse.com 路过图床（国内可达性较好）
+  try{
+    const fd = new FormData();
+    fd.append('source', blob, name);
+    fd.append('type','file');
+    fd.append('action','upload');
+    const r = await fetchT('https://imgse.com/api/1/upload', {method:'POST', body:fd});
+    if (r && r.status === 200){
+      const j = JSON.parse(r.text);
+      if (j && j.success && j.data && j.data.url) return j.data.url;
+    }
+  }catch(e){}
+  // 5) api.oioweb.cn
+  try{
+    const fd = new FormData();
+    fd.append('image', blob, name);
+    const r = await fetchT('https://api.oioweb.cn/api/common/imgur', {method:'POST', body:fd});
+    if (r && r.status === 200){
+      const j = JSON.parse(r.text);
+      if (j && j.code === 200 && j.data && j.data.url) return j.data.url;
+    }
+  }catch(e){}
+  // 6) tmpfiles.org（兜底：其链接为下载页，供"在新页面打开"下载）
+  try{
+    const fd = new FormData();
+    fd.append('file', blob, name);
+    const r = await fetchT('https://tmpfiles.org/api/v1/upload', {method:'POST', body:fd});
+    if (r && r.status === 200){
+      const j = JSON.parse(r.text);
+      if (j && j.status === 'success' && j.data && j.data.url) return j.data.url;
+    }
+  }catch(e){}
+  return null;
+}
+
+function showPreview(src, isMobile, blob, dataUrl){
+  const mask = document.createElement('div');
+  mask.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;';
+  const img = document.createElement('img');
+  img.src = src;
+  img.style.cssText = 'max-width:92%;max-height:64%;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.5);';
+  // 网络图加载失败时回退本地 dataURL，保证始终能看到成品图
+  img.onerror = function(){
+    if (dataUrl && img.src.indexOf('data:') !== 0) img.src = dataUrl;
+  };
+  const tip = document.createElement('div');
+  tip.style.cssText = 'color:#fff;font-size:14px;text-align:center;line-height:1.9;';
+  const btns = document.createElement('div');
+  btns.style.cssText = 'display:flex;flex-wrap:wrap;gap:10px;justify-content:center;';
+  const mkBtn = function(text, fn){
+    const b = document.createElement('button');
+    b.textContent = text;
+    b.style.cssText = 'background:rgba(255,255,255,.92);border:none;border-radius:6px;padding:10px 18px;font-size:14px;cursor:pointer;';
+    b.onclick = fn;
+    return b;
+  };
+  const openBtn = document.createElement('a');
+  openBtn.textContent = '在新页面打开';
+  openBtn.href = src;
+  openBtn.target = '_blank';
+  openBtn.rel = 'noopener';
+  openBtn.style.cssText = 'background:rgba(255,255,255,.92);border:none;border-radius:6px;padding:10px 18px;font-size:14px;cursor:pointer;text-decoration:none;color:#111;';
+  const close = mkBtn('关闭', function(){ mask.remove(); });
+  mask.appendChild(img);
+  mask.appendChild(tip);
+  mask.appendChild(btns);
+  mask.onclick = function(e){ if (e.target === mask) mask.remove(); };
+  document.body.appendChild(mask);
+
+  if (isMobile){
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const viaHttp = src.indexOf('http') === 0;
+    if (isIOS){
+      // 苹果手机：download 不保存到相册，改为引导长按"存储图像"（系统原生保存到照片）
+      tip.innerHTML = '<b style="font-size:16px;">长按上方图片</b><br>弹出菜单选择"存储图像"，即可保存到相册<br>'
+        + (viaHttp
+          ? '<span style="font-size:12px;opacity:.75;">图片已生成临时链接，请尽快保存</span>'
+          : '<span style="font-size:12px;opacity:.75;">若长按无反应，请点下方"分享图片"后保存</span>');
+    } else {
+      tip.innerHTML = viaHttp
+        ? '<b style="font-size:16px;">长按上方图片</b><br>保存到相册 / 分享给微信好友<br><span style="font-size:12px;opacity:.75;">图片已生成临时链接，请尽快保存</span>'
+        : '<b style="font-size:16px;">长按上方图片</b><br>保存到相册 / 分享给微信好友<br><span style="font-size:12px;opacity:.75;">若长按无反应，可截图保存或点下方"保存图片"</span>';
+      // 保存图片（安卓/其他浏览器下载可用；iOS 上不显示——download 不会存入相册）
+      const saveBtn = document.createElement('a');
+      saveBtn.textContent = '保存图片';
+      saveBtn.href = src;
+      saveBtn.download = '婚礼流程单.png';
+      saveBtn.style.cssText = openBtn.style.cssText;
+      btns.appendChild(saveBtn);
+    }
+    // 分享图片（系统分享，可直接分享到微信）
+    try{
+      if (blob && navigator.canShare){
+        const f = new File([blob], '婚礼流程单.png', {type:'image/png'});
+        if (navigator.canShare({files:[f]})){
+          const shareBtn = mkBtn('分享图片', function(){
+            navigator.share({files:[f], title:'婚礼流程单'}).catch(function(){});
+          });
+          btns.appendChild(shareBtn);
+        }
+      }
+    }catch(e){}
+  } else {
+    tip.innerHTML = '已生成导出图片，已开始下载<br>若未自动下载，请右键图片另存为';
+  }
+  btns.appendChild(openBtn);
+  btns.appendChild(close);
+}
+
+$('#btn_export').addEventListener('click', async function(){
+  const btn = this;
+  btn.textContent = '生成中…';
+  btn.disabled = true;
+  try{
+    const canvas = await html2canvas($('#captureDom'), {
+      useCORS:true, scale:2.5, backgroundColor:'#ffffff', logging:false
+    });
+    const dataUrl = canvas.toDataURL('image/png');
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
+    if (isMobile){
+      // 手机/平板：不自动下载（浏览器不支持），转临时链接后弹大图——长按保存相册 / 分享微信好友
+      canvas.toBlob(async function(blob){
+        let httpUrl = null;
+        if (blob) httpUrl = await uploadTmp(blob);
+        showPreview(httpUrl || dataUrl, true, blob || null, dataUrl);
+      }, 'image/png');
+    } else {
+      // 电脑：优先自动下载
+      try{
+        canvas.toBlob(function(blob){
+          if (blob && window.URL && URL.createObjectURL){
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '婚礼流程单.png';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 3000);
+          }
+        }, 'image/png');
+      }catch(e){}
+      try{
+        const link = document.createElement('a');
+        link.download = '婚礼流程单.png';
+        link.href = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(function(){ link.remove(); }, 1000);
+      }catch(e){}
+      // 兜底：弹出预览图（可右键保存）
+      setTimeout(function(){ showPreview(dataUrl, false, null, dataUrl); }, 350);
+    }
+  }catch(err){
+    alert('导出失败，请检查网络后重试。\n' + err.message);
+  }
+  btn.textContent = '导出高清图片';
+  btn.disabled = false;
+});
+
+/* ---------- 事件 ---------- */
+['inp_name','inp_hotel','inp_date','inp_flow','inp_foot','inp_slogan','inp_sloganEn','inp_font'].forEach(id=>{
+  $('#'+id).addEventListener('input', function(){ render(); save(); });
+});
+['inp_size','inp_opacity'].forEach(id=>{
+  $('#'+id).addEventListener('input', function(){ render(); save(); });
+});
+$('#inp_bw').addEventListener('change', function(){ applyPhoto(); });
+
+$('#inp_photo').addEventListener('change', function(e){
+  const f = e.target.files[0];
+  if (!f) return;
+  const rd = new FileReader();
+  rd.onload = function(ev){
+    rawPhoto = ev.target.result;
+    posX = 50; posY = 50;   // 新照片默认居中
+    applyPhoto();
+  };
+  rd.readAsDataURL(f);
+  e.target.value = '';
+});
+
+/* ---------- 启动 ---------- */
+restore();
+render();
+</script>
+</body>
+</html>
