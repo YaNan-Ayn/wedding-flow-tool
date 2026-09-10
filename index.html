@@ -513,9 +513,14 @@ function showPreview(src, isMobile, blob, dataUrl){
     saveBtn.textContent = '保存图片';
     saveBtn.style.cssText = openBtn.style.cssText;
     if (isIOS){
+      // 苹果：download 不存相册、window.open 会被微信拦截——点击改为引导长按当前大图
       saveBtn.onclick = function(e){
         e.preventDefault();
-        window.open(src, '_blank');
+        if (img.src.indexOf('http') === 0){
+          tip.innerHTML = '<b style="font-size:16px;">请长按上方大图</b><br>弹出菜单选择"存储图像"，即可保存到相册';
+        } else {
+          tip.innerHTML = '<b style="font-size:16px;">正在生成网络图片…</b><br>请稍等 2 秒后长按上方大图保存<br><span style="font-size:12px;opacity:.75;">若仍无法保存，请点"分享图片"保存到微信</span>';
+        }
       };
     } else {
       saveBtn.href = src;
@@ -569,13 +574,18 @@ $('#btn_export').addEventListener('click', async function(){
         if (!blob) return;
         const httpUrl = await uploadTmp(blob);
         const pv = window.__pv;
-        if (httpUrl && pv && pv.img && pv.img.src.indexOf('http') !== 0 && pv.mask.isConnected){
+        if (!pv || !pv.mask || !pv.mask.isConnected) return;
+        if (httpUrl && pv.img && pv.img.src.indexOf('http') !== 0){
           pv.img.src = httpUrl;
           if (pv.openBtn) pv.openBtn.href = httpUrl;
           if (pv.tip){
             pv.tip.innerHTML = '<b style="font-size:16px;">长按上方图片</b><br>弹出菜单选择"存储图像"，即可保存到相册<br>'
-              + '<span style="font-size:12px;opacity:.75;">图片已生成临时链接，请尽快保存</span>';
+              + '<span style="font-size:12px;opacity:.75;">网络图已就绪，长按即可保存</span>';
           }
+        } else if (!httpUrl && pv.tip && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)){
+          // 图床全部失败：引导使用分享或截图兜底
+          pv.tip.innerHTML = '<b style="font-size:16px;">长按上方图片</b><br>若无法保存，请点"分享图片"发到微信<br>'
+            + '<span style="font-size:12px;opacity:.75;">或在微信中打开后长按保存 / 直接截图</span>';
         }
       }, 'image/png');
     } else {
