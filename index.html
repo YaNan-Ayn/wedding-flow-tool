@@ -40,6 +40,52 @@
   .btn:disabled{opacity:.5;cursor:wait;}
   .file-hint{font-size:11.5px;color:#9a9a9a;margin-top:6px;line-height:1.6;}
 
+  /* ===== 视图 ===== */
+  .view{display:none;}
+  .view.active{display:block;}
+
+  /* ===== 选择页 ===== */
+  .home-wrap{min-height:calc(100vh - 48px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px 20px;text-align:center;}
+  .home-kicker{font-size:12px;letter-spacing:6px;color:#9a9a9a;font-weight:700;}
+  .home-title{font-size:38px;font-weight:600;letter-spacing:8px;color:#141414;}
+  .home-sub{font-size:13px;color:#8a8a8a;letter-spacing:2px;margin-bottom:22px;}
+  .home-cards{display:flex;flex-direction:column;gap:22px;width:100%;max-width:760px;}
+  @media(min-width:768px){.home-cards{flex-direction:row;}}
+  .home-card{
+    flex:1;background:#fff;border-radius:16px;padding:34px 30px;text-align:center;cursor:pointer;
+    box-shadow:0 10px 30px rgba(0,0,0,.07);border:1px solid #f0ece6;transition:transform .18s,box-shadow .18s;text-decoration:none;color:inherit;
+  }
+  .home-card:hover{transform:translateY(-4px);box-shadow:0 18px 44px rgba(0,0,0,.12);}
+  .hc-icon{width:52px;height:52px;margin:0 auto 18px;border:1px solid #d9d2c7;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;color:#8a8172;}
+  .hc-kicker{font-size:10px;letter-spacing:3px;color:#9a9a9a;font-weight:700;margin-bottom:8px;}
+  .hc-title{font-size:22px;font-weight:600;letter-spacing:3px;margin-bottom:8px;}
+  .hc-desc{font-size:12px;color:#9a9a9a;line-height:1.7;}
+
+  /* ===== 返回条 ===== */
+  .backbar{max-width:1060px;margin:0 auto;padding:18px 16px 0;display:flex;justify-content:space-between;align-items:center;}
+  .backbar a{font-size:13px;color:#555;text-decoration:none;border:1px solid #ddd;border-radius:20px;padding:6px 16px;background:#fff;}
+  .backbar a:hover{color:#111;border-color:#111;}
+  .backbar span{font-size:12px;color:#9a9a9a;letter-spacing:2px;}
+
+  /* ===== 时间流程表卡片 ===== */
+  .sched-card{
+    width:420px;min-height:690px;background:#ffffff;padding:44px 34px 40px;position:relative;
+    box-shadow:0 14px 40px rgba(0,0,0,.12);flex-shrink:0;
+    font-family:'Noto Serif SC','Songti SC','SimSun',serif;
+    display:flex;flex-direction:column;
+  }
+  .sched-top{text-align:center;padding-bottom:26px;border-bottom:1px solid #eae5dd;}
+  .sched-kicker{font-size:9px;letter-spacing:6px;color:#9a9a9a;font-weight:700;margin-bottom:10px;}
+  .sched-title{font-size:24px;font-weight:600;letter-spacing:2px;color:#141414;}
+  .sched-sec{margin-top:26px;}
+  .sched-sec-t{display:flex;align-items:baseline;gap:10px;border-bottom:1px solid #f0ece6;padding-bottom:8px;margin-bottom:12px;}
+  .sched-sec-t b{font-size:13px;font-weight:600;letter-spacing:2px;color:#141414;}
+  .sched-sec-t .en{font-size:7.5px;letter-spacing:2px;color:#b0a99c;font-weight:700;}
+  .sched-item{display:flex;gap:14px;padding:6px 0;line-height:1.55;}
+  .sched-item .t{font-size:11px;font-weight:600;color:#8a8172;letter-spacing:.5px;flex-shrink:0;min-width:38px;font-variant-numeric:tabular-nums;}
+  .sched-item .c{font-size:11px;color:#333;flex:1;letter-spacing:.3px;}
+  .sched-foot{margin-top:auto;padding-top:30px;text-align:center;font-size:8px;letter-spacing:3px;color:#b0a99c;font-weight:700;}
+
   /* ===== 预览卡片（导出即为下图） ===== */
   .preview-box{flex:1;min-width:0;}
   .preview-box>h3{font-size:16px;font-weight:600;margin-bottom:12px;text-align:center;}
@@ -87,7 +133,36 @@
 </style>
 </head>
 <body>
-<div class="wrap">
+  <!-- ===== 选择页 ===== -->
+  <div id="view_home" class="view active">
+    <div class="home-wrap">
+      <div class="home-kicker">WEDDING FLOW TOOL</div>
+      <div class="home-title">婚礼流程单</div>
+      <div class="home-sub">选择一种流程，进入编辑器</div>
+      <div class="home-cards">
+        <a class="home-card" href="#/ritual">
+          <div class="hc-icon">仪</div>
+          <div class="hc-kicker">CEREMONY FLOW</div>
+          <div class="hc-title">婚礼仪式流程</div>
+          <div class="hc-desc">主持流程清单 · 新人信息<br>照片拖拽 · 中英祝福语</div>
+        </a>
+        <a class="home-card" href="#/schedule">
+          <div class="hc-icon">时</div>
+          <div class="hc-kicker">WEDDING SCHEDULE</div>
+          <div class="hc-title">婚礼时间流程表</div>
+          <div class="hc-desc">新娘方 · 新郎方 · 迎亲安排<br>时间轴排版 · 高清导出</div>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 仪式流程编辑器 ===== -->
+  <div id="view_ritual" class="view">
+  <div class="backbar">
+    <a href="#/">&larr; 返回选择</a>
+    <span>WEDDING CEREMONY</span>
+  </div>
+  <div class="wrap">
 
   <!-- ===== 控制面板 ===== -->
   <div class="panel">
@@ -209,6 +284,83 @@
     </div>
   </div>
 </div>
+</div>
+
+  <!-- ===== 时间流程表编辑器 ===== -->
+  <div id="view_schedule" class="view">
+  <div class="backbar">
+    <a href="#/">&larr; 返回选择</a>
+    <span>WEDDING SCHEDULE</span>
+  </div>
+  <div class="wrap">
+    <div class="panel">
+      <h2>婚礼时间流程表</h2>
+      <p class="sub">编辑左侧内容，右侧实时预览；数据自动保存在本机浏览器</p>
+      <div class="sec-title">标题</div>
+      <div style="margin-bottom:12px;">
+        <label class="lbl"><b>卡片标题</b></label>
+        <input type="text" id="inp_schedTitle" value="婚礼安排 ★★★★★">
+      </div>
+      <div class="sec-title">时间安排（每行一项，格式：时间 事项）</div>
+      <div style="margin-bottom:12px;">
+        <label class="lbl"><b>新娘方</b></label>
+        <textarea id="inp_s1" rows="6">3:30 新娘起床洗漱吃早餐，敷面膜准备化妆
+4:30 新娘化妆造型（具体化妆时间需要和化妆师沟通）
+5:30 伴娘/朋友团（晨袍合影人员就位）
+8:30 亲属就位
+9:00 拍摄结束等待新郎娶亲</textarea>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label class="lbl"><b>新郎方</b></label>
+        <textarea id="inp_s2" rows="6">6:00 新郎起床洗漱吃早餐，整理房间
+6:45 新郎化妆造型
+7:15 伴郎/朋友团就位
+7:45 家长亲属，接亲人员就位
+8:10 车队到位
+8:30 出发仪式</textarea>
+      </div>
+      <div style="margin-bottom:12px;">
+        <label class="lbl"><b>早上迎亲</b></label>
+        <textarea id="inp_s3" rows="6">8:45 新郎出发
+9:00 到达新娘住处开始堵门环节
+9:40 出发
+10:00 回到家
+10:30 出发
+11:00 到达酒店
+婚礼开始时间根据来宾落座情况而定</textarea>
+      </div>
+      <div>
+        <label class="lbl"><b>字号（时间流程文字）</b><span class="val" id="val_schedSize">10px</span></label>
+        <input type="range" id="inp_schedSize" min="6" max="20" value="10">
+      </div>
+      <button class="btn" id="btn_exportSched">导出高清图片</button>
+    </div>
+    <div class="preview-box">
+      <h3>预览（导出即为下图）</h3>
+      <div class="preview-frame">
+        <div id="schedCapture" class="sched-card">
+          <div class="sched-top">
+            <div class="sched-kicker">WEDDING SCHEDULE</div>
+            <div class="sched-title" id="out_schedTitle">婚礼安排 ★★★★★</div>
+          </div>
+          <div class="sched-sec">
+            <div class="sched-sec-t"><b>新娘方</b><span class="en">BRIDE'S SIDE</span></div>
+            <div class="sched-list" id="out_s1"></div>
+          </div>
+          <div class="sched-sec">
+            <div class="sched-sec-t"><b>新郎方</b><span class="en">GROOM'S SIDE</span></div>
+            <div class="sched-list" id="out_s2"></div>
+          </div>
+          <div class="sched-sec">
+            <div class="sched-sec-t"><b>早上迎亲</b><span class="en">MORNING PICK-UP</span></div>
+            <div class="sched-list" id="out_s3"></div>
+          </div>
+          <div class="sched-foot">WISHING YOU A PERFECT DAY</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
 
 <script>
 const $ = s => document.querySelector(s);
@@ -646,6 +798,136 @@ $('#inp_photo').addEventListener('change', function(e){
 /* ---------- 启动 ---------- */
 restore();
 render();
+
+/* ===== 视图路由 ===== */
+function showView(name){
+  ['home','ritual','schedule'].forEach(function(v){
+    const el = $('#view_' + v);
+    if (el) el.classList.toggle('active', v === name);
+  });
+  window.scrollTo(0, 0);
+}
+function route(){
+  const h = (location.hash || '#/').replace('#/', '') || 'home';
+  if (['home','ritual','schedule'].indexOf(h) === -1){ showView('home'); return; }
+  showView(h);
+}
+
+/* ===== 时间流程表 ===== */
+const SCHED_KEY = 'weddingSched_v1';
+function parseSchedLines(text){
+  return text.split('\n').map(function(s){ return s.trim(); }).filter(Boolean);
+}
+function schedItemHTML(line){
+  const m = line.match(/^(\d{1,2}:\d{2})\s*(.*)$/);
+  if (m){
+    return '<div class="sched-item"><span class="t">' + m[1] + '</span><span class="c">' + m[2] + '</span></div>';
+  }
+  return '<div class="sched-item"><span class="t"></span><span class="c">' + line + '</span></div>';
+}
+function renderSched(){
+  $('#out_schedTitle').textContent = $('#inp_schedTitle').value;
+  const fs = +$('#inp_schedSize').value;
+  const pairs = [['out_s1','inp_s1'],['out_s2','inp_s2'],['out_s3','inp_s3']];
+  pairs.forEach(function(p){
+    const lines = parseSchedLines($('#' + p[1]).value);
+    const box = $('#' + p[0]);
+    box.innerHTML = lines.map(schedItemHTML).join('');
+    box.style.fontSize = fs + 'px';
+  });
+  $('#val_schedSize').textContent = fs + 'px';
+}
+function saveSched(){
+  try{
+    localStorage.setItem(SCHED_KEY, JSON.stringify({
+      title: $('#inp_schedTitle').value,
+      s1: $('#inp_s1').value, s2: $('#inp_s2').value, s3: $('#inp_s3').value,
+      size: $('#inp_schedSize').value
+    }));
+  }catch(e){}
+}
+function restoreSched(){
+  try{
+    const d = JSON.parse(localStorage.getItem(SCHED_KEY));
+    if (!d) return;
+    if (d.title) $('#inp_schedTitle').value = d.title;
+    if (d.s1) $('#inp_s1').value = d.s1;
+    if (d.s2) $('#inp_s2').value = d.s2;
+    if (d.s3) $('#inp_s3').value = d.s3;
+    if (d.size) $('#inp_schedSize').value = d.size;
+  }catch(e){}
+}
+['inp_schedTitle','inp_s1','inp_s2','inp_s3'].forEach(function(id){
+  $('#' + id).addEventListener('input', function(){ renderSched(); saveSched(); });
+});
+$('#inp_schedSize').addEventListener('input', function(){ renderSched(); saveSched(); });
+
+/* 时间表导出（复用并行图床 + 移动端弹层逻辑） */
+$('#btn_exportSched').addEventListener('click', async function(){
+  const btn = this;
+  btn.textContent = '生成中…';
+  btn.disabled = true;
+  try{
+    const canvas = await html2canvas($('#schedCapture'), {
+      useCORS:true, scale:2.5, backgroundColor:'#ffffff', logging:false
+    });
+    const dataUrl = canvas.toDataURL('image/png');
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
+    if (isMobile){
+      canvas.toBlob(async function(blob){
+        showPreview(dataUrl, true, blob || null, dataUrl);
+        if (!blob) return;
+        const httpUrl = await uploadTmp(blob);
+        const pv = window.__pv;
+        if (!pv || !pv.mask || !pv.mask.isConnected) return;
+        if (httpUrl && pv.img && pv.img.src.indexOf('http') !== 0){
+          pv.img.src = httpUrl;
+          if (pv.openBtn) pv.openBtn.href = httpUrl;
+          if (pv.tip){
+            pv.tip.innerHTML = '<b style="font-size:16px;">长按上方图片</b><br>弹出菜单选择"存储图像"，即可保存到相册<br>'
+              + '<span style="font-size:12px;opacity:.75;">网络图已就绪，长按即可保存</span>';
+          }
+        } else if (!httpUrl && pv.tip && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)){
+          pv.tip.innerHTML = '<b style="font-size:16px;">长按上方图片</b><br>若无法保存，请点"分享图片"发到微信<br>'
+            + '<span style="font-size:12px;opacity:.75;">或在微信中打开后长按保存 / 直接截图</span>';
+        }
+      }, 'image/png');
+    } else {
+      try{
+        canvas.toBlob(function(blob){
+          if (blob && window.URL && URL.createObjectURL){
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '婚礼时间流程表.png';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 3000);
+          }
+        }, 'image/png');
+      }catch(e){}
+      try{
+        const link = document.createElement('a');
+        link.download = '婚礼时间流程表.png';
+        link.href = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(function(){ link.remove(); }, 1000);
+      }catch(e){}
+      setTimeout(function(){ showPreview(dataUrl, false, null, dataUrl); }, 350);
+    }
+  }catch(err){
+    alert('导出失败，请检查网络后重试。\n' + err.message);
+  }
+  btn.textContent = '导出高清图片';
+  btn.disabled = false;
+});
+
+/* ---------- 启动 ---------- */
+restoreSched();
+renderSched();
+window.addEventListener('hashchange', route);
+route();
 </script>
 </body>
 </html>
