@@ -371,20 +371,33 @@ function restore(){
 
 /* ---------- 导出 ---------- */
 function showPreview(dataUrl){
+  const isTouch = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
   const mask = document.createElement('div');
-  mask.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;';
+  mask.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;';
   const img = document.createElement('img');
   img.src = dataUrl;
-  img.style.cssText = 'max-width:88%;max-height:66%;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.4);';
+  img.style.cssText = 'max-width:92%;max-height:64%;border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.5);';
   const tip = document.createElement('div');
-  tip.style.cssText = 'color:#fff;font-size:13px;text-align:center;line-height:1.8;';
-  tip.innerHTML = '已生成导出图片<br>如果浏览器没有自动下载，请长按（手机）或右键（电脑）图片保存';
+  tip.style.cssText = 'color:#fff;font-size:14px;text-align:center;line-height:1.9;';
+  tip.innerHTML = isTouch
+    ? '<b style="font-size:16px;">长按上方图片</b><br>即可保存到相册、或分享给微信好友'
+    : '已生成导出图片，已开始下载<br>若未自动下载，请右键图片另存为';
+  const btns = document.createElement('div');
+  btns.style.cssText = 'display:flex;gap:10px;';
+  const openBtn = document.createElement('a');
+  openBtn.textContent = '在新页面打开图片';
+  openBtn.href = dataUrl;
+  openBtn.target = '_blank';
+  openBtn.rel = 'noopener';
+  openBtn.style.cssText = 'background:rgba(255,255,255,.92);border:none;border-radius:6px;padding:10px 18px;font-size:14px;cursor:pointer;text-decoration:none;color:#111;';
   const close = document.createElement('button');
   close.textContent = '关闭';
-  close.style.cssText = 'background:#fff;border:none;border-radius:6px;padding:9px 26px;font-size:13px;cursor:pointer;';
+  close.style.cssText = 'background:rgba(255,255,255,.92);border:none;border-radius:6px;padding:10px 26px;font-size:14px;cursor:pointer;';
   mask.appendChild(img);
   mask.appendChild(tip);
-  mask.appendChild(close);
+  mask.appendChild(btns);
+  btns.appendChild(openBtn);
+  btns.appendChild(close);
   close.onclick = function(){ mask.remove(); };
   mask.onclick = function(e){ if (e.target === mask) mask.remove(); };
   document.body.appendChild(mask);
@@ -399,31 +412,36 @@ $('#btn_export').addEventListener('click', async function(){
       useCORS:true, scale:2.5, backgroundColor:'#ffffff', logging:false
     });
     const dataUrl = canvas.toDataURL('image/png');
-    // 方式1：Blob 下载（更可靠，避免超长 dataURL 被浏览器拦截）
-    try{
-      canvas.toBlob(function(blob){
-        if (blob && window.URL && URL.createObjectURL){
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = '婚礼流程单.png';
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 3000);
-        }
-      }, 'image/png');
-    }catch(e){}
-    // 方式2：dataURL 下载（若 Blob 路径失败）
-    try{
-      const link = document.createElement('a');
-      link.download = '婚礼流程单.png';
-      link.href = dataUrl;
-      document.body.appendChild(link);
-      link.click();
-      setTimeout(function(){ link.remove(); }, 1000);
-    }catch(e){}
-    // 兜底：展示预览图，保证用户一定能拿到图片
-    setTimeout(function(){ showPreview(dataUrl); }, 350);
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
+    if (isMobile){
+      // 手机/平板：不自动下载（浏览器不支持），直接弹出大图——长按保存相册 / 分享微信好友
+      showPreview(dataUrl);
+    } else {
+      // 电脑：优先自动下载
+      try{
+        canvas.toBlob(function(blob){
+          if (blob && window.URL && URL.createObjectURL){
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '婚礼流程单.png';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 3000);
+          }
+        }, 'image/png');
+      }catch(e){}
+      try{
+        const link = document.createElement('a');
+        link.download = '婚礼流程单.png';
+        link.href = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(function(){ link.remove(); }, 1000);
+      }catch(e){}
+      // 兜底：弹出预览图（可右键保存）
+      setTimeout(function(){ showPreview(dataUrl); }, 350);
+    }
   }catch(err){
     alert('导出失败，请检查网络后重试。\n' + err.message);
   }
