@@ -157,18 +157,18 @@
     </div>
     <div style="margin-bottom:12px;">
       <label class="lbl"><b>字号（流程文字）</b><span class="val" id="val_size">16px</span></label>
-      <input type="range" id="inp_size" min="6" max="20" value="16">
+      <input type="range" id="inp_size" min="6" max="20" value="10">
     </div>
     <div>
       <label class="lbl"><b>透明度（流程文字）</b><span class="val" id="val_opacity">100%</span></label>
-      <input type="range" id="inp_opacity" min="30" max="100" value="100">
+      <input type="range" id="inp_opacity" min="30" max="100" value="90">
     </div>
 
     <div class="sec-title">左侧照片</div>
     <div>
       <label class="lbl"><b>上传照片</b></label>
       <input type="file" id="inp_photo" accept="image/*" style="font-size:12px;">
-      <label class="row"><input type="checkbox" id="inp_bw" checked>黑白滤镜（参考图风格）</label>
+      <label class="row"><input type="checkbox" id="inp_bw">黑白滤镜（参考图风格）</label>
       <p class="file-hint">上传后在预览卡片上按住照片拖动，可调整照片显示位置（双击照片回到居中）。</p>
     </div>
 
@@ -362,7 +362,7 @@ function restore(){
     if (d.font) $('#inp_font').value = d.font;
     if (d.size) $('#inp_size').value = d.size;
     if (d.opacity) $('#inp_opacity').value = d.opacity;
-    $('#inp_bw').checked = d.bw !== false;
+    $('#inp_bw').checked = d.bw === true;
     if (typeof d.px === 'number') posX = d.px;
     if (typeof d.py === 'number') posY = d.py;
     if (d.photo){ rawPhoto = d.photo; applyPhoto(); }
@@ -484,17 +484,26 @@ function showPreview(src, isMobile, blob, dataUrl){
   document.body.appendChild(mask);
 
   if (isMobile){
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
     const viaHttp = src.indexOf('http') === 0;
-    tip.innerHTML = viaHttp
-      ? '<b style="font-size:16px;">长按上方图片</b><br>保存到相册 / 分享给微信好友<br><span style="font-size:12px;opacity:.75;">图片已生成临时链接，请尽快保存</span>'
-      : '<b style="font-size:16px;">长按上方图片</b><br>保存到相册 / 分享给微信好友<br><span style="font-size:12px;opacity:.75;">若长按无反应，可截图保存或点下方"保存图片"</span>';
-    // 保存图片（浏览器支持下载时生效）
-    const saveBtn = document.createElement('a');
-    saveBtn.textContent = '保存图片';
-    saveBtn.href = src;
-    saveBtn.download = '婚礼流程单.png';
-    saveBtn.style.cssText = openBtn.style.cssText;
-    btns.appendChild(saveBtn);
+    if (isIOS){
+      // 苹果手机：download 不保存到相册，改为引导长按"存储图像"（系统原生保存到照片）
+      tip.innerHTML = '<b style="font-size:16px;">长按上方图片</b><br>弹出菜单选择"存储图像"，即可保存到相册<br>'
+        + (viaHttp
+          ? '<span style="font-size:12px;opacity:.75;">图片已生成临时链接，请尽快保存</span>'
+          : '<span style="font-size:12px;opacity:.75;">若长按无反应，请点下方"分享图片"后保存</span>');
+    } else {
+      tip.innerHTML = viaHttp
+        ? '<b style="font-size:16px;">长按上方图片</b><br>保存到相册 / 分享给微信好友<br><span style="font-size:12px;opacity:.75;">图片已生成临时链接，请尽快保存</span>'
+        : '<b style="font-size:16px;">长按上方图片</b><br>保存到相册 / 分享给微信好友<br><span style="font-size:12px;opacity:.75;">若长按无反应，可截图保存或点下方"保存图片"</span>';
+      // 保存图片（安卓/其他浏览器下载可用；iOS 上不显示——download 不会存入相册）
+      const saveBtn = document.createElement('a');
+      saveBtn.textContent = '保存图片';
+      saveBtn.href = src;
+      saveBtn.download = '婚礼流程单.png';
+      saveBtn.style.cssText = openBtn.style.cssText;
+      btns.appendChild(saveBtn);
+    }
     // 分享图片（系统分享，可直接分享到微信）
     try{
       if (blob && navigator.canShare){
