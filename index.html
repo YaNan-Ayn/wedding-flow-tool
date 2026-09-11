@@ -301,6 +301,16 @@
         <label class="lbl"><b>卡片标题</b></label>
         <input type="text" id="inp_schedTitle" value="婚礼安排 ★★★★★">
       </div>
+      <div style="margin-bottom:12px;">
+        <label class="lbl"><b>字体</b></label>
+        <select id="inp_schedFont">
+          <option value="'Noto Serif SC','Songti SC','SimSun',serif">思源宋体（高级感）</option>
+          <option value="'ZCOOL XiaoWei','Noto Serif SC','Songti SC',serif">站酷小薇（文艺）</option>
+          <option value="Georgia,'Times New Roman','Songti SC',serif">经典衬线</option>
+          <option value="'KaiTi','STKaiti','楷体',serif">楷体</option>
+          <option value="'Microsoft YaHei','PingFang SC',sans-serif">微软雅黑（清晰现代）</option>
+        </select>
+      </div>
       <div class="sec-title">时间安排（每行一项，格式：时间 事项）</div>
       <div style="margin-bottom:12px;">
         <label class="lbl"><b>新娘方</b></label>
@@ -828,6 +838,7 @@ function schedItemHTML(line){
 function renderSched(){
   $('#out_schedTitle').textContent = $('#inp_schedTitle').value;
   const fs = +$('#inp_schedSize').value;
+  $('#schedCapture').style.fontFamily = $('#inp_schedFont').value;
   const pairs = [['out_s1','inp_s1'],['out_s2','inp_s2'],['out_s3','inp_s3']];
   pairs.forEach(function(p){
     const lines = parseSchedLines($('#' + p[1]).value);
@@ -841,6 +852,7 @@ function saveSched(){
   try{
     localStorage.setItem(SCHED_KEY, JSON.stringify({
       title: $('#inp_schedTitle').value,
+      font: $('#inp_schedFont').value,
       s1: $('#inp_s1').value, s2: $('#inp_s2').value, s3: $('#inp_s3').value,
       size: $('#inp_schedSize').value
     }));
@@ -851,6 +863,7 @@ function restoreSched(){
     const d = JSON.parse(localStorage.getItem(SCHED_KEY));
     if (!d) return;
     if (d.title) $('#inp_schedTitle').value = d.title;
+    if (d.font) $('#inp_schedFont').value = d.font;
     if (d.s1) $('#inp_s1').value = d.s1;
     if (d.s2) $('#inp_s2').value = d.s2;
     if (d.s3) $('#inp_s3').value = d.s3;
@@ -860,7 +873,9 @@ function restoreSched(){
 ['inp_schedTitle','inp_s1','inp_s2','inp_s3'].forEach(function(id){
   $('#' + id).addEventListener('input', function(){ renderSched(); saveSched(); });
 });
-$('#inp_schedSize').addEventListener('input', function(){ renderSched(); saveSched(); });
+['inp_schedSize','inp_schedFont'].forEach(function(id){
+  $('#' + id).addEventListener('input', function(){ renderSched(); saveSched(); });
+});
 
 /* 时间表导出（复用并行图床 + 移动端弹层逻辑） */
 $('#btn_exportSched').addEventListener('click', async function(){
@@ -868,8 +883,10 @@ $('#btn_exportSched').addEventListener('click', async function(){
   btn.textContent = '生成中…';
   btn.disabled = true;
   try{
+    // 确保 web 字体已加载完成再导出，避免文字渲染成系统字体导致模糊
+    try{ if (document.fonts && document.fonts.ready) await document.fonts.ready; }catch(e){}
     const canvas = await html2canvas($('#schedCapture'), {
-      useCORS:true, scale:2.5, backgroundColor:'#ffffff', logging:false
+      useCORS:true, scale:3, backgroundColor:'#ffffff', logging:false
     });
     const dataUrl = canvas.toDataURL('image/png');
     const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
