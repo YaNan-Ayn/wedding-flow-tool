@@ -784,12 +784,15 @@ $('#btn_export').addEventListener('click', async function(){
 });
 
 /* ---------- 事件 ---------- */
-['inp_name','inp_hotel','inp_date','inp_flow','inp_foot','inp_slogan','inp_sloganEn','inp_font'].forEach(id=>{
+['inp_name','inp_hotel','inp_date','inp_flow','inp_foot','inp_slogan','inp_sloganEn'].forEach(id=>{
   $('#'+id).addEventListener('input', function(){ render(); save(); });
 });
 ['inp_size','inp_opacity'].forEach(id=>{
   $('#'+id).addEventListener('input', function(){ render(); save(); });
 });
+// 字体下拉：手机浏览器只触发 change 事件，需同时监听 input 和 change
+$('#inp_font').addEventListener('input', function(){ render(); save(); });
+$('#inp_font').addEventListener('change', function(){ render(); save(); });
 $('#inp_bw').addEventListener('change', function(){ applyPhoto(); });
 
 $('#inp_photo').addEventListener('change', function(e){
@@ -873,9 +876,10 @@ function restoreSched(){
 ['inp_schedTitle','inp_s1','inp_s2','inp_s3'].forEach(function(id){
   $('#' + id).addEventListener('input', function(){ renderSched(); saveSched(); });
 });
-['inp_schedSize','inp_schedFont'].forEach(function(id){
-  $('#' + id).addEventListener('input', function(){ renderSched(); saveSched(); });
-});
+$('#inp_schedSize').addEventListener('input', function(){ renderSched(); saveSched(); });
+// 字体下拉：手机浏览器只触发 change 事件，需同时监听 input 和 change
+$('#inp_schedFont').addEventListener('input', function(){ renderSched(); saveSched(); });
+$('#inp_schedFont').addEventListener('change', function(){ renderSched(); saveSched(); });
 
 /* 时间表导出（复用并行图床 + 移动端弹层逻辑） */
 $('#btn_exportSched').addEventListener('click', async function(){
