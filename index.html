@@ -1008,7 +1008,7 @@ renderSched();
 
 /* ===== 自定义字体下拉（三端兼容，不依赖系统下拉） ===== */
 function initCustomSelect(selId, triggerId, menuId, renderFn, saveFn){
-  const sel = $(selId), trigger = $(triggerId), menu = $(menuId);
+  const sel = $('#' + selId), trigger = $('#' + triggerId), menu = $('#' + menuId);
   if (!sel || !trigger || !menu) return;
   function close(){ menu.classList.remove('open'); trigger.closest('.custom-select').classList.remove('open'); document.removeEventListener('click', docClose); }
   function docClose(e){
