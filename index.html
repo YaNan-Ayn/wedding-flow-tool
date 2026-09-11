@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>婚礼流程单编辑器</title>
-<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=ZCOOL+XiaoWei&display=swap">
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;500;700&family=Playfair+Display:wght@400;600&family=Great+Vibes&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css">
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
@@ -224,10 +225,13 @@
       <label class="lbl"><b>字体</b></label>
       <select id="inp_font">
         <option value="'Noto Serif SC','Songti SC','SimSun',serif">思源宋体（高级感）</option>
+        <option value="'LXGW WenKai','KaiTi','STKaiti','楷体',serif">霞鹜文楷（楷书人文）</option>
+        <option value="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif">思源黑体（现代简约）</option>
         <option value="'ZCOOL XiaoWei','Noto Serif SC','Songti SC',serif">站酷小薇（文艺）</option>
+        <option value="'Playfair Display','Noto Serif SC','Georgia',serif">Playfair（英式衬线）</option>
+        <option value="'Great Vibes','Noto Serif SC','Brush Script MT',cursive">花体英文（婚礼手写）</option>
         <option value="Georgia,'Times New Roman','Songti SC',serif">经典衬线</option>
-        <option value="'KaiTi','STKaiti','楷体',serif">楷体</option>
-        <option value="'Microsoft YaHei','PingFang SC',sans-serif">微软雅黑（现代）</option>
+        <option value="'Microsoft YaHei','PingFang SC',sans-serif">微软雅黑（清晰现代）</option>
       </select>
     </div>
     <div style="margin-bottom:12px;">
@@ -305,9 +309,12 @@
         <label class="lbl"><b>字体</b></label>
         <select id="inp_schedFont">
           <option value="'Noto Serif SC','Songti SC','SimSun',serif">思源宋体（高级感）</option>
+          <option value="'LXGW WenKai','KaiTi','STKaiti','楷体',serif">霞鹜文楷（楷书人文）</option>
+          <option value="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif">思源黑体（现代简约）</option>
           <option value="'ZCOOL XiaoWei','Noto Serif SC','Songti SC',serif">站酷小薇（文艺）</option>
+          <option value="'Playfair Display','Noto Serif SC','Georgia',serif">Playfair（英式衬线）</option>
+          <option value="'Great Vibes','Noto Serif SC','Brush Script MT',cursive">花体英文（婚礼手写）</option>
           <option value="Georgia,'Times New Roman','Songti SC',serif">经典衬线</option>
-          <option value="'KaiTi','STKaiti','楷体',serif">楷体</option>
           <option value="'Microsoft YaHei','PingFang SC',sans-serif">微软雅黑（清晰现代）</option>
         </select>
       </div>
@@ -521,7 +528,7 @@ function restore(){
     $('#inp_foot').value = d.foot || $('#inp_foot').value;
     $('#inp_slogan').value = d.slogan || $('#inp_slogan').value;
     $('#inp_sloganEn').value = d.sloganEn || $('#inp_sloganEn').value;
-    if (d.font) $('#inp_font').value = d.font;
+    if (d.font && [...$('#inp_font').options].some(function(o){ return o.value === d.font; })) $('#inp_font').value = d.font;
     if (d.size) $('#inp_size').value = d.size;
     if (d.opacity) $('#inp_opacity').value = d.opacity;
     $('#inp_bw').checked = d.bw === true;
@@ -866,7 +873,7 @@ function restoreSched(){
     const d = JSON.parse(localStorage.getItem(SCHED_KEY));
     if (!d) return;
     if (d.title) $('#inp_schedTitle').value = d.title;
-    if (d.font) $('#inp_schedFont').value = d.font;
+    if (d.font && [...$('#inp_schedFont').options].some(function(o){ return o.value === d.font; })) $('#inp_schedFont').value = d.font;
     if (d.s1) $('#inp_s1').value = d.s1;
     if (d.s2) $('#inp_s2').value = d.s2;
     if (d.s3) $('#inp_s3').value = d.s3;
