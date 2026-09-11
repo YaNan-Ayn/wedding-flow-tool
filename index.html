@@ -41,6 +41,16 @@
   .btn:disabled{opacity:.5;cursor:wait;}
   .file-hint{font-size:11.5px;color:#9a9a9a;margin-top:6px;line-height:1.6;}
 
+  /* ===== 字体按钮网格（替代原生下拉，三端兼容） ===== */
+  .font-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;}
+  .font-grid button{
+    border:1px solid #e2e2e2;border-radius:8px;padding:8px 4px;font-size:12px;font-family:inherit;
+    background:#fff;color:#555;cursor:pointer;transition:all .15s;line-height:1.3;text-align:center;
+    -webkit-appearance:none;appearance:none;
+  }
+  .font-grid button:hover{border-color:#aaa;}
+  .font-grid button.active{border-color:#111;color:#111;font-weight:600;background:#f6f4ee;}
+
   /* ===== 视图 ===== */
   .view{display:none;}
   .view.active{display:block;}
@@ -223,7 +233,7 @@
     <div class="sec-title">文字样式</div>
     <div style="margin-bottom:12px;">
       <label class="lbl"><b>字体</b></label>
-      <select id="inp_font">
+      <select id="inp_font" style="display:none">
         <option value="'Noto Serif SC','Songti SC','SimSun',serif">思源宋体（高级感）</option>
         <option value="'LXGW WenKai','KaiTi','STKaiti','楷体',serif">霞鹜文楷（楷书人文）</option>
         <option value="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif">思源黑体（现代简约）</option>
@@ -233,6 +243,16 @@
         <option value="Georgia,'Times New Roman','Songti SC',serif">经典衬线</option>
         <option value="'Microsoft YaHei','PingFang SC',sans-serif">微软雅黑（清晰现代）</option>
       </select>
+      <div class="font-grid" id="fontGrid">
+        <button type="button" data-font="'Noto Serif SC','Songti SC','SimSun',serif">思源宋体</button>
+        <button type="button" data-font="'LXGW WenKai','KaiTi','STKaiti','楷体',serif">霞鹜文楷</button>
+        <button type="button" data-font="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif">思源黑体</button>
+        <button type="button" data-font="'ZCOOL XiaoWei','Noto Serif SC','Songti SC',serif">站酷小薇</button>
+        <button type="button" data-font="'Playfair Display','Noto Serif SC','Georgia',serif">Playfair</button>
+        <button type="button" data-font="'Great Vibes','Noto Serif SC','Brush Script MT',cursive">花体英文</button>
+        <button type="button" data-font="Georgia,'Times New Roman','Songti SC',serif">经典衬线</button>
+        <button type="button" data-font="'Microsoft YaHei','PingFang SC',sans-serif">微软雅黑</button>
+      </div>
     </div>
     <div style="margin-bottom:12px;">
       <label class="lbl"><b>字号（流程文字）</b><span class="val" id="val_size">16px</span></label>
@@ -307,7 +327,7 @@
       </div>
       <div style="margin-bottom:12px;">
         <label class="lbl"><b>字体</b></label>
-        <select id="inp_schedFont">
+        <select id="inp_schedFont" style="display:none">
           <option value="'Noto Serif SC','Songti SC','SimSun',serif">思源宋体（高级感）</option>
           <option value="'LXGW WenKai','KaiTi','STKaiti','楷体',serif">霞鹜文楷（楷书人文）</option>
           <option value="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif">思源黑体（现代简约）</option>
@@ -317,6 +337,16 @@
           <option value="Georgia,'Times New Roman','Songti SC',serif">经典衬线</option>
           <option value="'Microsoft YaHei','PingFang SC',sans-serif">微软雅黑（清晰现代）</option>
         </select>
+        <div class="font-grid" id="schedFontGrid">
+          <button type="button" data-font="'Noto Serif SC','Songti SC','SimSun',serif">思源宋体</button>
+          <button type="button" data-font="'LXGW WenKai','KaiTi','STKaiti','楷体',serif">霞鹜文楷</button>
+          <button type="button" data-font="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif">思源黑体</button>
+          <button type="button" data-font="'ZCOOL XiaoWei','Noto Serif SC','Songti SC',serif">站酷小薇</button>
+          <button type="button" data-font="'Playfair Display','Noto Serif SC','Georgia',serif">Playfair</button>
+          <button type="button" data-font="'Great Vibes','Noto Serif SC','Brush Script MT',cursive">花体英文</button>
+          <button type="button" data-font="Georgia,'Times New Roman','Songti SC',serif">经典衬线</button>
+          <button type="button" data-font="'Microsoft YaHei','PingFang SC',sans-serif">微软雅黑</button>
+        </div>
       </div>
       <div class="sec-title">时间安排（每行一项，格式：时间 事项）</div>
       <div style="margin-bottom:12px;">
@@ -954,6 +984,31 @@ $('#btn_exportSched').addEventListener('click', async function(){
 /* ---------- 启动 ---------- */
 restoreSched();
 renderSched();
+
+/* ===== 字体按钮网格（三端兼容，替代原生下拉） ===== */
+function syncFontGrid(gridId, value){
+  const grid = $(gridId);
+  if (!grid) return;
+  grid.querySelectorAll('button').forEach(function(b){
+    b.classList.toggle('active', b.getAttribute('data-font') === value);
+  });
+}
+function initFontGrid(gridId, selectId, renderFn, saveFn){
+  const grid = $(gridId);
+  if (!grid) return;
+  grid.querySelectorAll('button').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      $('#' + selectId).value = btn.getAttribute('data-font');
+      syncFontGrid(gridId, $('#' + selectId).value);
+      renderFn(); saveFn();
+    });
+  });
+}
+initFontGrid('fontGrid', 'inp_font', render, save);
+initFontGrid('schedFontGrid', 'inp_schedFont', renderSched, saveSched);
+syncFontGrid('fontGrid', $('#inp_font').value);
+syncFontGrid('schedFontGrid', $('#inp_schedFont').value);
+
 window.addEventListener('hashchange', route);
 route();
 </script>
