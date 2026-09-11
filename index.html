@@ -41,15 +41,30 @@
   .btn:disabled{opacity:.5;cursor:wait;}
   .file-hint{font-size:11.5px;color:#9a9a9a;margin-top:6px;line-height:1.6;}
 
-  /* ===== 字体按钮网格（替代原生下拉，三端兼容） ===== */
-  .font-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;}
-  .font-grid button{
-    border:1px solid #e2e2e2;border-radius:8px;padding:8px 4px;font-size:12px;font-family:inherit;
-    background:#fff;color:#555;cursor:pointer;transition:all .15s;line-height:1.3;text-align:center;
-    -webkit-appearance:none;appearance:none;
+  /* ===== 自定义字体下拉（不依赖系统下拉，三端稳定） ===== */
+  .custom-select{position:relative;margin-top:6px;}
+  .cs-trigger{
+    width:100%;border:1px solid #ddd;border-radius:8px;background:#fff;
+    padding:9px 10px;font-size:13px;color:#333;cursor:pointer;
+    display:flex;justify-content:space-between;align-items:center;gap:8px;
+    font-family:inherit;-webkit-appearance:none;appearance:none;
   }
-  .font-grid button:hover{border-color:#aaa;}
-  .font-grid button.active{border-color:#111;color:#111;font-weight:600;background:#f6f4ee;}
+  .cs-trigger:active{background:#faf8f2;}
+  .cs-arrow{color:#888;font-size:11px;flex-shrink:0;transition:transform .15s;}
+  .custom-select.open .cs-arrow{transform:rotate(180deg);}
+  .cs-menu{
+    position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:50;
+    background:#fff;border:1px solid #e0e0e0;border-radius:10px;
+    box-shadow:0 8px 24px rgba(0,0,0,.13);display:none;
+    max-height:264px;overflow:auto;padding:4px;
+  }
+  .cs-menu.open{display:block;}
+  .cs-menu button{
+    display:block;width:100%;text-align:left;padding:9px 10px;border:none;background:none;
+    font-size:13px;color:#444;border-radius:7px;cursor:pointer;font-family:inherit;
+  }
+  .cs-menu button:hover{background:#f5f3ec;}
+  .cs-menu button.active{color:#111;font-weight:600;background:#f0ecdf;}
 
   /* ===== 视图 ===== */
   .view{display:none;}
@@ -243,15 +258,18 @@
         <option value="Georgia,'Times New Roman','Songti SC',serif">经典衬线</option>
         <option value="'Microsoft YaHei','PingFang SC',sans-serif">微软雅黑（清晰现代）</option>
       </select>
-      <div class="font-grid" id="fontGrid">
-        <button type="button" data-font="'Noto Serif SC','Songti SC','SimSun',serif">思源宋体</button>
-        <button type="button" data-font="'LXGW WenKai','KaiTi','STKaiti','楷体',serif">霞鹜文楷</button>
-        <button type="button" data-font="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif">思源黑体</button>
-        <button type="button" data-font="'ZCOOL XiaoWei','Noto Serif SC','Songti SC',serif">站酷小薇</button>
-        <button type="button" data-font="'Playfair Display','Noto Serif SC','Georgia',serif">Playfair</button>
-        <button type="button" data-font="'Great Vibes','Noto Serif SC','Brush Script MT',cursive">花体英文</button>
-        <button type="button" data-font="Georgia,'Times New Roman','Songti SC',serif">经典衬线</button>
-        <button type="button" data-font="'Microsoft YaHei','PingFang SC',sans-serif">微软雅黑</button>
+      <div class="custom-select">
+        <button type="button" class="cs-trigger" id="fontTrigger"><span class="cs-name">思源宋体</span><span class="cs-arrow">▾</span></button>
+        <div class="cs-menu" id="fontMenu">
+          <button type="button" data-font="'Noto Serif SC','Songti SC','SimSun',serif">思源宋体</button>
+          <button type="button" data-font="'LXGW WenKai','KaiTi','STKaiti','楷体',serif">霞鹜文楷</button>
+          <button type="button" data-font="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif">思源黑体</button>
+          <button type="button" data-font="'ZCOOL XiaoWei','Noto Serif SC','Songti SC',serif">站酷小薇</button>
+          <button type="button" data-font="'Playfair Display','Noto Serif SC','Georgia',serif">Playfair</button>
+          <button type="button" data-font="'Great Vibes','Noto Serif SC','Brush Script MT',cursive">花体英文</button>
+          <button type="button" data-font="Georgia,'Times New Roman','Songti SC',serif">经典衬线</button>
+          <button type="button" data-font="'Microsoft YaHei','PingFang SC',sans-serif">微软雅黑</button>
+        </div>
       </div>
     </div>
     <div style="margin-bottom:12px;">
@@ -337,15 +355,18 @@
           <option value="Georgia,'Times New Roman','Songti SC',serif">经典衬线</option>
           <option value="'Microsoft YaHei','PingFang SC',sans-serif">微软雅黑（清晰现代）</option>
         </select>
-        <div class="font-grid" id="schedFontGrid">
-          <button type="button" data-font="'Noto Serif SC','Songti SC','SimSun',serif">思源宋体</button>
-          <button type="button" data-font="'LXGW WenKai','KaiTi','STKaiti','楷体',serif">霞鹜文楷</button>
-          <button type="button" data-font="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif">思源黑体</button>
-          <button type="button" data-font="'ZCOOL XiaoWei','Noto Serif SC','Songti SC',serif">站酷小薇</button>
-          <button type="button" data-font="'Playfair Display','Noto Serif SC','Georgia',serif">Playfair</button>
-          <button type="button" data-font="'Great Vibes','Noto Serif SC','Brush Script MT',cursive">花体英文</button>
-          <button type="button" data-font="Georgia,'Times New Roman','Songti SC',serif">经典衬线</button>
-          <button type="button" data-font="'Microsoft YaHei','PingFang SC',sans-serif">微软雅黑</button>
+        <div class="custom-select">
+          <button type="button" class="cs-trigger" id="schedFontTrigger"><span class="cs-name">思源宋体</span><span class="cs-arrow">▾</span></button>
+          <div class="cs-menu" id="schedFontMenu">
+            <button type="button" data-font="'Noto Serif SC','Songti SC','SimSun',serif">思源宋体</button>
+            <button type="button" data-font="'LXGW WenKai','KaiTi','STKaiti','楷体',serif">霞鹜文楷</button>
+            <button type="button" data-font="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif">思源黑体</button>
+            <button type="button" data-font="'ZCOOL XiaoWei','Noto Serif SC','Songti SC',serif">站酷小薇</button>
+            <button type="button" data-font="'Playfair Display','Noto Serif SC','Georgia',serif">Playfair</button>
+            <button type="button" data-font="'Great Vibes','Noto Serif SC','Brush Script MT',cursive">花体英文</button>
+            <button type="button" data-font="Georgia,'Times New Roman','Songti SC',serif">经典衬线</button>
+            <button type="button" data-font="'Microsoft YaHei','PingFang SC',sans-serif">微软雅黑</button>
+          </div>
         </div>
       </div>
       <div class="sec-title">时间安排（每行一项，格式：时间 事项）</div>
@@ -985,29 +1006,48 @@ $('#btn_exportSched').addEventListener('click', async function(){
 restoreSched();
 renderSched();
 
-/* ===== 字体按钮网格（三端兼容，替代原生下拉） ===== */
-function syncFontGrid(gridId, value){
-  const grid = $(gridId);
-  if (!grid) return;
-  grid.querySelectorAll('button').forEach(function(b){
-    b.classList.toggle('active', b.getAttribute('data-font') === value);
+/* ===== 自定义字体下拉（三端兼容，不依赖系统下拉） ===== */
+function initCustomSelect(selId, triggerId, menuId, renderFn, saveFn){
+  const sel = $(selId), trigger = $(triggerId), menu = $(menuId);
+  if (!sel || !trigger || !menu) return;
+  function close(){ menu.classList.remove('open'); trigger.closest('.custom-select').classList.remove('open'); document.removeEventListener('click', docClose); }
+  function docClose(e){
+    if (!menu.contains(e.target) && e.target !== trigger) close();
+  }
+  function sync(){
+    let matched = false;
+    menu.querySelectorAll('button').forEach(function(b){
+      const on = b.getAttribute('data-font') === sel.value;
+      b.classList.toggle('active', on);
+      if (on){ trigger.querySelector('.cs-name').textContent = b.textContent; matched = true; }
+    });
+    if (!matched && menu.querySelector('button')){
+      trigger.querySelector('.cs-name').textContent = menu.querySelector('button').textContent;
+    }
+  }
+  trigger.addEventListener('click', function(e){
+    e.stopPropagation();
+    const isOpen = menu.classList.contains('open');
+    close();
+    if (!isOpen){
+      menu.classList.add('open');
+      trigger.closest('.custom-select').classList.add('open');
+      document.addEventListener('click', docClose);
+    }
   });
-}
-function initFontGrid(gridId, selectId, renderFn, saveFn){
-  const grid = $(gridId);
-  if (!grid) return;
-  grid.querySelectorAll('button').forEach(function(btn){
+  menu.querySelectorAll('button').forEach(function(btn){
     btn.addEventListener('click', function(){
-      $('#' + selectId).value = btn.getAttribute('data-font');
-      syncFontGrid(gridId, $('#' + selectId).value);
+      sel.value = btn.getAttribute('data-font');
+      trigger.querySelector('.cs-name').textContent = btn.textContent;
+      sync();
       renderFn(); saveFn();
+      close();
     });
   });
+  sync();
 }
-initFontGrid('fontGrid', 'inp_font', render, save);
-initFontGrid('schedFontGrid', 'inp_schedFont', renderSched, saveSched);
-syncFontGrid('fontGrid', $('#inp_font').value);
-syncFontGrid('schedFontGrid', $('#inp_schedFont').value);
+initCustomSelect('inp_font', 'fontTrigger', 'fontMenu', render, save);
+initCustomSelect('inp_schedFont', 'schedFontTrigger', 'schedFontMenu', renderSched, saveSched);
 
 window.addEventListener('hashchange', route);
 route();
