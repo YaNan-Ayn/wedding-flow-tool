@@ -725,7 +725,7 @@ $('#btn_export').addEventListener('click', async function(){
   btn.disabled = true;
   try{
     const canvas = await html2canvas($('#captureDom'), {
-      useCORS:true, scale:2.5, backgroundColor:'#ffffff', logging:false
+      useCORS:true, scale:4, backgroundColor:'#ffffff', logging:false
     });
     const dataUrl = canvas.toDataURL('image/png');
     const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
@@ -886,7 +886,7 @@ $('#btn_exportSched').addEventListener('click', async function(){
     // 确保 web 字体已加载完成再导出，避免文字渲染成系统字体导致模糊
     try{ if (document.fonts && document.fonts.ready) await document.fonts.ready; }catch(e){}
     const canvas = await html2canvas($('#schedCapture'), {
-      useCORS:true, scale:3, backgroundColor:'#ffffff', logging:false
+      useCORS:true, scale:4, backgroundColor:'#ffffff', logging:false
     });
     const dataUrl = canvas.toDataURL('image/png');
     const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
