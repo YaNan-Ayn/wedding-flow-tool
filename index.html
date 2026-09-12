@@ -1014,7 +1014,7 @@ function shiftTime(t, offsetMin){
 }
 function updateRowTime(text, keyword, newTime){
   return text.split('\n').map(function(line){
-    var m = line.match(/^(\d{1,2})[:：](\d{2})\s+(.*)$/);
+    var m = line.match(/^(\d{1,2})[:：](\d{2})\s*(.*)$/);
     if (m && m[3].indexOf(keyword) !== -1) return newTime + ' ' + m[3];
     return line;
   }).join('\n');
@@ -1022,7 +1022,7 @@ function updateRowTime(text, keyword, newTime){
 function readAnchorTimes(){
   var lines = $('#inp_s3').value.split('\n'), t1 = null, t2 = null;
   lines.forEach(function(line){
-    var m = line.match(/^(\d{1,2})[:：](\d{2})\s+(.*)$/);
+    var m = line.match(/^(\d{1,2})[:：](\d{2})\s*(.*)$/);
     if (!m) return;
     var t = m[1] + ':' + m[2];
     if (m[3].indexOf('新郎出发') !== -1) t1 = t;
