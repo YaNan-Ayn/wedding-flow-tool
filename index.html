@@ -1002,9 +1002,74 @@ $('#btn_exportSched').addEventListener('click', async function(){
   btn.disabled = false;
 });
 
+/* ===== 时间自动联动：早上迎亲 → 新郎方 / 新娘方 ===== */
+function shiftTime(t, offsetMin){
+  var m = t.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return t;
+  var total = parseInt(m[1],10) * 60 + parseInt(m[2],10) + offsetMin;
+  if (total < 0) total = 0;
+  if (total >= 1440) total = total % 1440;
+  var h = Math.floor(total / 60), mm = total % 60;
+  return h + ':' + (mm < 10 ? '0' : '') + mm;
+}
+function updateRowTime(text, keyword, newTime){
+  return text.split('\n').map(function(line){
+    var m = line.match(/^(\d{1,2}:\d{2})\s+(.*)$/);
+    if (m && m[2].indexOf(keyword) !== -1) return newTime + ' ' + m[2];
+    return line;
+  }).join('\n');
+}
+function readAnchorTimes(){
+  var lines = $('#inp_s3').value.split('\n'), t1 = null, t2 = null;
+  lines.forEach(function(line){
+    var m = line.match(/^(\d{1,2}:\d{2})\s+(.*)$/);
+    if (!m) return;
+    if (m[2].indexOf('新郎出发') !== -1) t1 = m[1];
+    else if (m[2].indexOf('到达新娘住处') !== -1 || m[2].indexOf('堵门') !== -1) t2 = m[1];
+  });
+  return [t1, t2];
+}
+function autoSyncSched(){
+  var anchors = readAnchorTimes();
+  var t1 = anchors[0], t2 = anchors[1];
+  var changed = false;
+  if (t1 && t1 !== lastT1){
+    var rules = [
+      ['出发仪式', -20],
+      ['车队到位', -40],
+      ['家长亲属', -60],
+      ['伴郎', -90],
+      ['化妆造型', -120],
+      ['起床', -150]
+    ];
+    var v = $('#inp_s2').value;
+    rules.forEach(function(r){ v = updateRowTime(v, r[0], shiftTime(t1, r[1])); });
+    $('#inp_s2').value = v;
+    changed = true;
+  }
+  if (t2 && t2 !== lastT2){
+    var rules2 = [
+      ['拍摄结束', -10],
+      ['亲属就位', -30],
+      ['伴娘', -150],
+      ['化妆造型', -240],
+      ['起床', -300]
+    ];
+    var v2 = $('#inp_s1').value;
+    rules2.forEach(function(r){ v2 = updateRowTime(v2, r[0], shiftTime(t2, r[1])); });
+    $('#inp_s1').value = v2;
+    changed = true;
+  }
+  lastT1 = t1; lastT2 = t2;
+  if (changed){ renderSched(); saveSched(); }
+}
+
 /* ---------- 启动 ---------- */
 restoreSched();
 renderSched();
+var schedAnchor = readAnchorTimes();
+var lastT1 = schedAnchor[0], lastT2 = schedAnchor[1];
+$('#inp_s3').addEventListener('blur', autoSyncSched);
 
 /* ===== 自定义字体下拉（三端兼容，不依赖系统下拉） ===== */
 function initCustomSelect(selId, triggerId, menuId, renderFn, saveFn){
