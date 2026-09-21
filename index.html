@@ -156,6 +156,39 @@
 
   .slogan{margin-top:66px;text-align:center;font-size:7.5px;color:#6f6f6f;letter-spacing:3px;white-space:nowrap;overflow:hidden;width:100%;}
   .slogan-en{margin-top:9px;text-align:center;font-size:5px;color:#a8a8a8;letter-spacing:1.5px;line-height:1.2;white-space:nowrap;overflow:hidden;width:100%;}
+
+  /* ===== 作品库 ===== */
+  .btn-ghost{
+    display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+    background:#fff;color:#111;border:1px solid #d8d2c8;border-radius:9px;padding:11px;font-size:14px;
+    font-family:inherit;font-weight:500;cursor:pointer;transition:border-color .15s,background .15s;margin-top:8px;
+  }
+  .btn-ghost:hover{border-color:#111;background:#faf8f2;}
+  .gallery-wrap{max-width:1060px;margin:0 auto;padding:24px 16px 60px;}
+  .gallery-head{background:#fff;border-radius:14px;padding:24px 26px;box-shadow:0 6px 20px rgba(0,0,0,.06);margin-bottom:20px;}
+  .gallery-head h2{font-size:20px;font-weight:600;letter-spacing:2px;}
+  .gallery-head .sub{font-size:12.5px;color:#8a8a8a;margin-top:6px;line-height:1.7;}
+  .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px;}
+  .g-item{position:relative;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.08);cursor:pointer;border:1px solid #f0ece6;transition:transform .18s,box-shadow .18s;}
+  .g-item:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(0,0,0,.13);}
+  .g-thumb{background:#e9e4dc;aspect-ratio:420/690;overflow:hidden;}
+  .g-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .g-info{padding:12px 14px 14px;}
+  .g-type{font-size:10px;letter-spacing:2px;color:#9a9a9a;font-weight:700;margin-bottom:4px;}
+  .g-title{font-size:13.5px;color:#222;font-weight:600;line-height:1.5;word-break:break-all;}
+  .g-time{font-size:11px;color:#b0aca4;margin-top:5px;font-variant-numeric:tabular-nums;}
+  .g-del{
+    position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;border:none;cursor:pointer;
+    background:rgba(17,17,17,.66);color:#fff;font-size:13px;line-height:1;z-index:2;
+    display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s,background .15s;
+  }
+  .g-item:hover .g-del{opacity:1;}
+  .g-del:hover{background:rgba(200,40,40,.9);}
+  @media(max-width:560px){.g-del{opacity:1;background:rgba(17,17,17,.55);}}
+  .gallery-empty{
+    display:none;background:#fff;border-radius:14px;padding:60px 24px;text-align:center;
+    color:#a09a90;font-size:14px;line-height:2;box-shadow:0 6px 20px rgba(0,0,0,.06);
+  }
 </style>
 </head>
 <body>
@@ -178,6 +211,12 @@
           <div class="hc-title">婚礼时间流程表</div>
           <div class="hc-desc">新娘方 · 新郎方 · 迎亲安排<br>时间轴排版 · 高清导出</div>
         </a>
+        <a class="home-card" href="#/gallery">
+          <div class="hc-icon">库</div>
+          <div class="hc-kicker">MY WORK</div>
+          <div class="hc-title">作品库</div>
+          <div class="hc-desc">回看历史编辑与导出图片<br>点击可继续编辑 · 可删除</div>
+        </a>
       </div>
     </div>
   </div>
@@ -186,7 +225,7 @@
   <div id="view_ritual" class="view">
   <div class="backbar">
     <a href="#/">&larr; 返回选择</a>
-    <span>WEDDING CEREMONY</span>
+    <span><a href="#/gallery">作品库</a> · WEDDING CEREMONY</span>
   </div>
   <div class="wrap">
 
@@ -289,6 +328,7 @@
       <p class="file-hint">上传后在预览卡片上按住照片拖动，可调整照片显示位置（双击照片回到居中）。</p>
     </div>
 
+    <button class="btn-ghost" id="btn_saveGalleryRitual">存入作品库</button>
     <button class="btn" id="btn_export">导出高清图片</button>
   </div>
 
@@ -332,7 +372,7 @@
   <div id="view_schedule" class="view">
   <div class="backbar">
     <a href="#/">&larr; 返回选择</a>
-    <span>WEDDING SCHEDULE</span>
+    <span><a href="#/gallery">作品库</a> · WEDDING SCHEDULE</span>
   </div>
   <div class="wrap">
     <div class="panel">
@@ -401,6 +441,7 @@
         <label class="lbl"><b>字号（时间流程文字）</b><span class="val" id="val_schedSize">10px</span></label>
         <input type="range" id="inp_schedSize" min="6" max="20" value="10">
       </div>
+      <button class="btn-ghost" id="btn_saveGallerySched">存入作品库</button>
       <button class="btn" id="btn_exportSched">导出高清图片</button>
     </div>
     <div class="preview-box">
@@ -427,6 +468,22 @@
         </div>
       </div>
     </div>
+  </div>
+  </div>
+
+  <!-- ===== 作品库 ===== -->
+  <div id="view_gallery" class="view">
+  <div class="backbar">
+    <a href="#/">&larr; 返回选择</a>
+    <span>MY WORK · 作品库</span>
+  </div>
+  <div class="gallery-wrap">
+    <div class="gallery-head">
+      <h2>作品库</h2>
+      <p class="sub">导出图片或点"存入作品库"后，作品会自动保存在这里（仅存于本机浏览器）。点击任一作品可回到编辑器继续编辑。</p>
+    </div>
+    <div class="gallery-grid" id="galleryGrid"></div>
+    <div class="gallery-empty" id="galleryEmpty">还没有作品。<br>在两个编辑器里点"导出高清图片"或"存入作品库"，作品就会出现在这里。</div>
   </div>
   </div>
 
@@ -786,6 +843,7 @@ $('#btn_export').addEventListener('click', async function(){
       useCORS:true, scale:4, backgroundColor:'#ffffff', logging:false
     });
     const dataUrl = canvas.toDataURL('image/png');
+    saveToGallery('ritual', dataUrl);
     const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
     if (isMobile){
       // 手机/平板：立即弹出本地大图（零等待），同时后台并行上传图床，成功后自动换成网络链接（微信可长按保存）
@@ -872,7 +930,7 @@ render();
 
 /* ===== 视图路由 ===== */
 function showView(name){
-  ['home','ritual','schedule'].forEach(function(v){
+  ['home','ritual','schedule','gallery'].forEach(function(v){
     const el = $('#view_' + v);
     if (el) el.classList.toggle('active', v === name);
   });
@@ -880,9 +938,206 @@ function showView(name){
 }
 function route(){
   const h = (location.hash || '#/').replace('#/', '') || 'home';
-  if (['home','ritual','schedule'].indexOf(h) === -1){ showView('home'); return; }
+  if (['home','ritual','schedule','gallery'].indexOf(h) === -1){ showView('home'); return; }
   showView(h);
+  if (h === 'gallery') renderGallery();
 }
+
+/* ===== 作品库 ===== */
+const GALLERY_KEY = 'weddingGallery_v1';
+const GALLERY_MAX = 30;
+
+function loadGallery(){
+  try{
+    const g = JSON.parse(localStorage.getItem(GALLERY_KEY));
+    return Array.isArray(g) ? g : [];
+  }catch(e){ return []; }
+}
+function storeGallery(g){
+  try{
+    localStorage.setItem(GALLERY_KEY, JSON.stringify(g));
+    return true;
+  }catch(e){ return false; }
+}
+function escHtml(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function fmtTime(ts){
+  const d = new Date(ts);
+  const p = function(n){ return (n < 10 ? '0' : '') + n; };
+  return d.getFullYear() + '.' + p(d.getMonth()+1) + '.' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+/* 缩略图：宽 360 的 JPEG，供作品库网格显示 */
+function makeThumb(dataUrl, cb){
+  const img = new Image();
+  img.onload = function(){
+    try{
+      const w = 360, h = Math.round(img.naturalHeight * w / img.naturalWidth);
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      cb(c.toDataURL('image/jpeg', 0.72));
+    }catch(e){ cb(dataUrl); }
+  };
+  img.onerror = function(){ cb(dataUrl); };
+  img.src = dataUrl;
+}
+/* 照片压缩：宽 960 的 JPEG，避免恢复数据过大超出 localStorage 配额 */
+function compressPhoto(dataUrl, cb){
+  const img = new Image();
+  img.onload = function(){
+    try{
+      const mw = 960;
+      const w = Math.min(img.naturalWidth, mw);
+      const h = Math.round(img.naturalHeight * w / img.naturalWidth);
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      cb(c.toDataURL('image/jpeg', 0.8));
+    }catch(e){ cb(dataUrl); }
+  };
+  img.onerror = function(){ cb(dataUrl); };
+  img.src = dataUrl;
+}
+function collectRitualState(photo){
+  return {
+    name:$('#inp_name').value, hotel:$('#inp_hotel').value, date:$('#inp_date').value,
+    flow:$('#inp_flow').value, foot:$('#inp_foot').value, slogan:$('#inp_slogan').value,
+    sloganEn:$('#inp_sloganEn').value, font:$('#inp_font').value, size:$('#inp_size').value,
+    opacity:$('#inp_opacity').value, bw:$('#inp_bw').checked,
+    px:posX, py:posY, photo:photo || null
+  };
+}
+function collectSchedState(){
+  return {
+    title:$('#inp_schedTitle').value, font:$('#inp_schedFont').value,
+    s1:$('#inp_s1').value, s2:$('#inp_s2').value, s3:$('#inp_s3').value,
+    size:$('#inp_schedSize').value
+  };
+}
+/* 存入作品库：导出成功或手动点"存入作品库"时调用 */
+function saveToGallery(type, dataUrl){
+  function pushItem(state){
+    makeThumb(dataUrl, function(thumb){
+      const item = {
+        id: 'g' + Date.now() + '_' + Math.floor(Math.random() * 10000),
+        type: type,
+        title: type === 'ritual'
+          ? ('婚礼仪式流程 · ' + ($('#inp_name').value || '未命名'))
+          : ('婚礼时间流程表 · ' + ($('#inp_schedTitle').value || '未命名')),
+        thumb: thumb,
+        state: state,
+        time: Date.now()
+      };
+      let g = loadGallery();
+      g.unshift(item);
+      if (g.length > GALLERY_MAX) g = g.slice(0, GALLERY_MAX);
+      while (g.length > 1 && !storeGallery(g)){ g.pop(); }
+      if (g.length === 1 && !storeGallery(g)){ alert('本机存储空间不足，无法存入作品库。'); return; }
+      autoToast('已存入作品库');
+      if ($('#view_gallery').classList.contains('active')) renderGallery();
+    });
+  }
+  if (type === 'ritual'){
+    if (rawPhoto){
+      compressPhoto(rawPhoto, function(p){ pushItem(collectRitualState(p)); });
+    } else {
+      pushItem(collectRitualState(null));
+    }
+  } else {
+    pushItem(collectSchedState());
+  }
+}
+/* 作品库网格 */
+function renderGallery(){
+  const grid = $('#galleryGrid'), empty = $('#galleryEmpty');
+  if (!grid) return;
+  const g = loadGallery();
+  if (!g.length){
+    grid.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  grid.innerHTML = g.map(function(x){
+    const typeTxt = x.type === 'ritual' ? '仪式流程' : '时间流程表';
+    return '<div class="g-item" data-id="' + escHtml(x.id) + '">'
+      + '<button type="button" class="g-del" data-id="' + escHtml(x.id) + '" aria-label="删除">✕</button>'
+      + '<div class="g-thumb"><img src="' + x.thumb + '" alt="' + escHtml(x.title) + '" loading="lazy"></div>'
+      + '<div class="g-info"><div class="g-type">' + typeTxt + '</div><div class="g-title">' + escHtml(x.title) + '</div><div class="g-time">' + fmtTime(x.time) + '</div></div>'
+      + '</div>';
+  }).join('');
+}
+/* 点击作品 → 恢复数据并进入对应编辑器 */
+function openGalleryItem(id){
+  const g = loadGallery();
+  let item = null;
+  g.forEach(function(x){ if (x.id === id) item = x; });
+  if (!item) return;
+  if (item.type === 'ritual'){
+    try{ localStorage.setItem(SAVE_KEY, JSON.stringify(item.state)); }catch(e){}
+    showView('ritual');
+    restore();
+    render();
+    location.hash = '#/ritual';
+  } else {
+    try{ localStorage.setItem(SCHED_KEY, JSON.stringify(item.state)); }catch(e){}
+    showView('schedule');
+    restoreSched();
+    renderSched();
+    const a = readAnchorTimes();
+    lastT1 = a[0]; lastT2 = a[1];
+    location.hash = '#/schedule';
+  }
+  window.scrollTo(0, 0);
+  autoToast('已载入作品，可继续编辑');
+}
+/* 删除作品 */
+function delGalleryItem(id){
+  if (!confirm('删除这条作品？删除后不可恢复。')) return;
+  const g = loadGallery().filter(function(x){ return x.id !== id; });
+  storeGallery(g);
+  renderGallery();
+}
+/* 事件：网格点击（委托） */
+$('#galleryGrid').addEventListener('click', function(e){
+  const del = e.target.closest('.g-del');
+  if (del){
+    e.stopPropagation();
+    delGalleryItem(del.getAttribute('data-id'));
+    return;
+  }
+  const item = e.target.closest('.g-item');
+  if (item) openGalleryItem(item.getAttribute('data-id'));
+});
+
+/* 手动存入作品库（截取当前预览） */
+$('#btn_saveGalleryRitual').addEventListener('click', async function(){
+  const btn = this;
+  btn.textContent = '保存中…';
+  try{
+    try{ if (document.fonts && document.fonts.ready) await document.fonts.ready; }catch(e){}
+    const canvas = await html2canvas($('#captureDom'), {useCORS:true, scale:4, backgroundColor:'#ffffff', logging:false});
+    saveToGallery('ritual', canvas.toDataURL('image/png'));
+  }catch(err){
+    alert('保存失败，请重试。');
+  }
+  btn.textContent = '存入作品库';
+});
+$('#btn_saveGallerySched').addEventListener('click', async function(){
+  const btn = this;
+  btn.textContent = '保存中…';
+  try{
+    try{ if (document.fonts && document.fonts.ready) await document.fonts.ready; }catch(e){}
+    const canvas = await html2canvas($('#schedCapture'), {useCORS:true, scale:4, backgroundColor:'#ffffff', logging:false});
+    saveToGallery('schedule', canvas.toDataURL('image/png'));
+  }catch(err){
+    alert('保存失败，请重试。');
+  }
+  btn.textContent = '存入作品库';
+});
 
 /* ===== 时间流程表 ===== */
 const SCHED_KEY = 'weddingSched_v1';
@@ -951,6 +1206,7 @@ $('#btn_exportSched').addEventListener('click', async function(){
       useCORS:true, scale:4, backgroundColor:'#ffffff', logging:false
     });
     const dataUrl = canvas.toDataURL('image/png');
+    saveToGallery('schedule', dataUrl);
     const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
     if (isMobile){
       canvas.toBlob(async function(blob){
