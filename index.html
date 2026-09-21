@@ -103,6 +103,7 @@
   .sched-top{text-align:center;padding-bottom:26px;border-bottom:1px solid #eae5dd;}
   .sched-kicker{font-size:9px;letter-spacing:6px;color:#9a9a9a;font-weight:700;margin-bottom:10px;}
   .sched-title{font-size:24px;font-weight:600;letter-spacing:2px;color:#141414;}
+  .sched-date{margin-top:9px;font-size:11px;letter-spacing:2px;color:#8a8172;font-variant-numeric:tabular-nums;}
   .sched-sec{margin-top:26px;}
   .sched-sec-t{display:flex;align-items:baseline;gap:10px;border-bottom:1px solid #f0ece6;padding-bottom:8px;margin-bottom:12px;}
   .sched-sec-t b{font-size:13px;font-weight:600;letter-spacing:2px;color:#141414;}
@@ -171,11 +172,11 @@
   .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px;}
   .g-item{position:relative;background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.08);cursor:pointer;border:1px solid #f0ece6;transition:transform .18s,box-shadow .18s;}
   .g-item:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(0,0,0,.13);}
-  .g-thumb{background:#e9e4dc;aspect-ratio:420/690;overflow:hidden;}
-  .g-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .g-thumb{background:#f4f1ea;aspect-ratio:1/1;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:10px;text-align:center;}
+  .gt-date{font-size:15px;font-weight:600;color:#2c2c2c;letter-spacing:1px;word-break:break-all;line-height:1.4;}
+  .gt-line{font-size:11px;color:#6f6f6f;line-height:1.5;word-break:break-all;max-width:100%;}
   .g-info{padding:12px 14px 14px;}
   .g-type{font-size:10px;letter-spacing:2px;color:#9a9a9a;font-weight:700;margin-bottom:4px;}
-  .g-title{font-size:13.5px;color:#222;font-weight:600;line-height:1.5;word-break:break-all;}
   .g-time{font-size:11px;color:#b0aca4;margin-top:5px;font-variant-numeric:tabular-nums;}
   .g-del{
     position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;border:none;cursor:pointer;
@@ -384,6 +385,10 @@
         <input type="text" id="inp_schedTitle" value="婚礼安排 ★★★★★">
       </div>
       <div style="margin-bottom:12px;">
+        <label class="lbl"><b>婚礼日期</b></label>
+        <input type="text" id="inp_schedDate" value="2026.10.4" placeholder="如 2026.10.4">
+      </div>
+      <div style="margin-bottom:12px;">
         <label class="lbl"><b>字体</b></label>
         <select id="inp_schedFont" style="display:none">
           <option value="'Noto Serif SC','Songti SC','SimSun',serif">思源宋体（高级感）</option>
@@ -451,6 +456,7 @@
           <div class="sched-top">
             <div class="sched-kicker">WEDDING SCHEDULE</div>
             <div class="sched-title" id="out_schedTitle">婚礼安排 ★★★★★</div>
+            <div class="sched-date" id="out_schedDate"></div>
           </div>
           <div class="sched-sec">
             <div class="sched-sec-t"><b>新娘方</b><span class="en">BRIDE'S SIDE</span></div>
@@ -843,7 +849,7 @@ $('#btn_export').addEventListener('click', async function(){
       useCORS:true, scale:4, backgroundColor:'#ffffff', logging:false
     });
     const dataUrl = canvas.toDataURL('image/png');
-    saveToGallery('ritual', dataUrl);
+    saveToGallery('ritual');
     const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
     if (isMobile){
       // 手机/平板：立即弹出本地大图（零等待），同时后台并行上传图床，成功后自动换成网络链接（微信可长按保存）
@@ -969,21 +975,6 @@ function fmtTime(ts){
   const p = function(n){ return (n < 10 ? '0' : '') + n; };
   return d.getFullYear() + '.' + p(d.getMonth()+1) + '.' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
 }
-/* 缩略图：宽 360 的 JPEG，供作品库网格显示 */
-function makeThumb(dataUrl, cb){
-  const img = new Image();
-  img.onload = function(){
-    try{
-      const w = 360, h = Math.round(img.naturalHeight * w / img.naturalWidth);
-      const c = document.createElement('canvas');
-      c.width = w; c.height = h;
-      c.getContext('2d').drawImage(img, 0, 0, w, h);
-      cb(c.toDataURL('image/jpeg', 0.72));
-    }catch(e){ cb(dataUrl); }
-  };
-  img.onerror = function(){ cb(dataUrl); };
-  img.src = dataUrl;
-}
 /* 照片压缩：宽 960 的 JPEG，避免恢复数据过大超出 localStorage 配额 */
 function compressPhoto(dataUrl, cb){
   const img = new Image();
@@ -1012,45 +1003,41 @@ function collectRitualState(photo){
 }
 function collectSchedState(){
   return {
-    title:$('#inp_schedTitle').value, font:$('#inp_schedFont').value,
+    title:$('#inp_schedTitle').value, date:$('#inp_schedDate').value, font:$('#inp_schedFont').value,
     s1:$('#inp_s1').value, s2:$('#inp_s2').value, s3:$('#inp_s3').value,
     size:$('#inp_schedSize').value
   };
 }
 /* 存入作品库：导出成功或手动点"存入作品库"时调用 */
-function saveToGallery(type, dataUrl){
-  function pushItem(state){
-    makeThumb(dataUrl, function(thumb){
-      const item = {
-        id: 'g' + Date.now() + '_' + Math.floor(Math.random() * 10000),
-        type: type,
-        title: type === 'ritual'
-          ? ('婚礼仪式流程 · ' + ($('#inp_name').value || '未命名'))
-          : ('婚礼时间流程表 · ' + ($('#inp_schedTitle').value || '未命名')),
-        thumb: thumb,
-        state: state,
-        time: Date.now()
-      };
-      let g = loadGallery();
-      g.unshift(item);
-      if (g.length > GALLERY_MAX) g = g.slice(0, GALLERY_MAX);
-      while (g.length > 1 && !storeGallery(g)){ g.pop(); }
-      if (g.length === 1 && !storeGallery(g)){ alert('本机存储空间不足，无法存入作品库。'); return; }
-      autoToast('已存入作品库');
-      if ($('#view_gallery').classList.contains('active')) renderGallery();
+function saveToGallery(type){
+  const item = {
+    id: 'g' + Date.now() + '_' + Math.floor(Math.random() * 10000),
+    type: type,
+    title: type === 'ritual'
+      ? ('婚礼仪式流程 · ' + ($('#inp_name').value || '未命名'))
+      : ('婚礼时间流程表 · ' + ($('#inp_schedTitle').value || '未命名')),
+    state: type === 'ritual' ? collectRitualState(null) : collectSchedState(),
+    time: Date.now()
+  };
+  if (type === 'ritual' && rawPhoto){
+    compressPhoto(rawPhoto, function(p){
+      item.state.photo = p;
+      pushGalleryItem(item);
     });
-  }
-  if (type === 'ritual'){
-    if (rawPhoto){
-      compressPhoto(rawPhoto, function(p){ pushItem(collectRitualState(p)); });
-    } else {
-      pushItem(collectRitualState(null));
-    }
   } else {
-    pushItem(collectSchedState());
+    pushGalleryItem(item);
   }
 }
-/* 作品库网格 */
+function pushGalleryItem(item){
+  let g = loadGallery();
+  g.unshift(item);
+  if (g.length > GALLERY_MAX) g = g.slice(0, GALLERY_MAX);
+  while (g.length > 1 && !storeGallery(g)){ g.pop(); }
+  if (g.length === 1 && !storeGallery(g)){ alert('本机存储空间不足，无法存入作品库。'); return; }
+  autoToast('已存入作品库');
+  if ($('#view_gallery').classList.contains('active')) renderGallery();
+}
+/* 作品库网格：小方块文字卡片（仪式=日期/新人/酒店，时间表=日期） */
 function renderGallery(){
   const grid = $('#galleryGrid'), empty = $('#galleryEmpty');
   if (!grid) return;
@@ -1062,11 +1049,18 @@ function renderGallery(){
   }
   if (empty) empty.style.display = 'none';
   grid.innerHTML = g.map(function(x){
-    const typeTxt = x.type === 'ritual' ? '仪式流程' : '时间流程表';
+    const isR = x.type === 'ritual';
+    const s = x.state || {};
+    const dateTxt = (s.date || '').trim();
+    let inner = '<div class="gt-date">' + escHtml(dateTxt || '未填日期') + '</div>';
+    if (isR){
+      if (s.name) inner += '<div class="gt-line">' + escHtml(s.name) + '</div>';
+      if (s.hotel) inner += '<div class="gt-line">' + escHtml(s.hotel) + '</div>';
+    }
     return '<div class="g-item" data-id="' + escHtml(x.id) + '">'
       + '<button type="button" class="g-del" data-id="' + escHtml(x.id) + '" aria-label="删除">✕</button>'
-      + '<div class="g-thumb"><img src="' + x.thumb + '" alt="' + escHtml(x.title) + '" loading="lazy"></div>'
-      + '<div class="g-info"><div class="g-type">' + typeTxt + '</div><div class="g-title">' + escHtml(x.title) + '</div><div class="g-time">' + fmtTime(x.time) + '</div></div>'
+      + '<div class="g-thumb">' + inner + '</div>'
+      + '<div class="g-info"><div class="g-type">' + (isR ? '仪式流程' : '时间流程表') + '</div><div class="g-time">' + fmtTime(x.time) + '</div></div>'
       + '</div>';
   }).join('');
 }
@@ -1120,7 +1114,7 @@ $('#btn_saveGalleryRitual').addEventListener('click', async function(){
   try{
     try{ if (document.fonts && document.fonts.ready) await document.fonts.ready; }catch(e){}
     const canvas = await html2canvas($('#captureDom'), {useCORS:true, scale:4, backgroundColor:'#ffffff', logging:false});
-    saveToGallery('ritual', canvas.toDataURL('image/png'));
+    saveToGallery('ritual');
   }catch(err){
     alert('保存失败，请重试。');
   }
@@ -1132,7 +1126,7 @@ $('#btn_saveGallerySched').addEventListener('click', async function(){
   try{
     try{ if (document.fonts && document.fonts.ready) await document.fonts.ready; }catch(e){}
     const canvas = await html2canvas($('#schedCapture'), {useCORS:true, scale:4, backgroundColor:'#ffffff', logging:false});
-    saveToGallery('schedule', canvas.toDataURL('image/png'));
+    saveToGallery('schedule');
   }catch(err){
     alert('保存失败，请重试。');
   }
@@ -1153,6 +1147,9 @@ function schedItemHTML(line){
 }
 function renderSched(){
   $('#out_schedTitle').textContent = $('#inp_schedTitle').value;
+  const sd = $('#inp_schedDate').value.trim();
+  $('#out_schedDate').textContent = sd;
+  $('#out_schedDate').style.display = sd ? '' : 'none';
   const fs = +$('#inp_schedSize').value;
   $('#schedCapture').style.fontFamily = $('#inp_schedFont').value;
   const pairs = [['out_s1','inp_s1'],['out_s2','inp_s2'],['out_s3','inp_s3']];
@@ -1168,6 +1165,7 @@ function saveSched(){
   try{
     localStorage.setItem(SCHED_KEY, JSON.stringify({
       title: $('#inp_schedTitle').value,
+      date: $('#inp_schedDate').value,
       font: $('#inp_schedFont').value,
       s1: $('#inp_s1').value, s2: $('#inp_s2').value, s3: $('#inp_s3').value,
       size: $('#inp_schedSize').value
@@ -1179,6 +1177,7 @@ function restoreSched(){
     const d = JSON.parse(localStorage.getItem(SCHED_KEY));
     if (!d) return;
     if (d.title) $('#inp_schedTitle').value = d.title;
+    if (typeof d.date === 'string') $('#inp_schedDate').value = d.date;
     if (d.font && [...$('#inp_schedFont').options].some(function(o){ return o.value === d.font; })) $('#inp_schedFont').value = d.font;
     if (d.s1) $('#inp_s1').value = d.s1;
     if (d.s2) $('#inp_s2').value = d.s2;
@@ -1206,7 +1205,7 @@ $('#btn_exportSched').addEventListener('click', async function(){
       useCORS:true, scale:4, backgroundColor:'#ffffff', logging:false
     });
     const dataUrl = canvas.toDataURL('image/png');
-    saveToGallery('schedule', dataUrl);
+    saveToGallery('schedule');
     const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
     if (isMobile){
       canvas.toBlob(async function(blob){
