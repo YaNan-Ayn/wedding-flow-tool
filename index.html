@@ -197,7 +197,7 @@
   <div id="view_home" class="view active">
     <div class="home-wrap">
       <div class="home-kicker">WEDDING FLOW TOOL</div>
-      <div class="home-title">婚礼流程单</div>
+      <div class="home-title">婚礼编辑器</div>
       <div class="home-sub">选择一种流程，进入编辑器</div>
       <div class="home-cards">
         <a class="home-card" href="#/ritual">
@@ -209,7 +209,7 @@
         <a class="home-card" href="#/schedule">
           <div class="hc-icon">时</div>
           <div class="hc-kicker">WEDDING SCHEDULE</div>
-          <div class="hc-title">婚礼时间流程表</div>
+          <div class="hc-title">婚礼时间安排</div>
           <div class="hc-desc">新娘方 · 新郎方 · 迎亲安排<br>时间轴排版 · 高清导出</div>
         </a>
         <a class="home-card" href="#/gallery">
@@ -225,7 +225,7 @@
   <!-- ===== 仪式流程编辑器 ===== -->
   <div id="view_ritual" class="view">
   <div class="backbar">
-    <a href="#/">&larr; 返回选择</a>
+    <a href="#/" id="backLinkRitual">&larr; 返回选择</a>
     <span><a href="#/gallery">作品库</a> · WEDDING CEREMONY</span>
   </div>
   <div class="wrap">
@@ -372,7 +372,7 @@
   <!-- ===== 时间流程表编辑器 ===== -->
   <div id="view_schedule" class="view">
   <div class="backbar">
-    <a href="#/">&larr; 返回选择</a>
+    <a href="#/" id="backLinkSched">&larr; 返回选择</a>
     <span><a href="#/gallery">作品库</a> · WEDDING SCHEDULE</span>
   </div>
   <div class="wrap">
@@ -935,6 +935,16 @@ restore();
 render();
 
 /* ===== 视图路由 ===== */
+let backTarget = 'home';   // 编辑器返回目标：home 或 gallery
+function updateBackLinks(){
+  const t = backTarget === 'gallery' ? '#/gallery' : '#/';
+  const l1 = $('#backLinkRitual'), l2 = $('#backLinkSched');
+  if (l1) l1.href = t;
+  if (l2) l2.href = t;
+}
+document.querySelectorAll('.home-card').forEach(function(a){
+  a.addEventListener('click', function(){ backTarget = 'home'; updateBackLinks(); });
+});
 function showView(name){
   ['home','ritual','schedule','gallery'].forEach(function(v){
     const el = $('#view_' + v);
@@ -1070,6 +1080,8 @@ function openGalleryItem(id){
   let item = null;
   g.forEach(function(x){ if (x.id === id) item = x; });
   if (!item) return;
+  backTarget = 'gallery';
+  updateBackLinks();
   if (item.type === 'ritual'){
     try{ localStorage.setItem(SAVE_KEY, JSON.stringify(item.state)); }catch(e){}
     showView('ritual');
