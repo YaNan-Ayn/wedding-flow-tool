@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;500;700&family=Playfair+Display:wght@400;600&family=Great+Vibes&display=swap">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css">
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://static.cloudbase.net/cloudbase-js-sdk/2.27.1/cloudbase.full.js"></script>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:'Noto Serif SC','Songti SC','SimSun',serif;background:#f0ece6;color:#1a1a1a;}
@@ -190,6 +191,29 @@
     display:none;background:#fff;border-radius:14px;padding:60px 24px;text-align:center;
     color:#a09a90;font-size:14px;line-height:2;box-shadow:0 6px 20px rgba(0,0,0,.06);
   }
+
+  /* ===== CloudBase 登录面板 ===== */
+  .cloud-panel{background:#fff;border-radius:14px;padding:16px 20px;box-shadow:0 6px 20px rgba(0,0,0,.06);margin-bottom:18px;}
+  .cloud-form{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+  .cloud-form input{
+    flex:1 1 160px;min-width:0;border:1px solid #e2e2e2;border-radius:8px;padding:9px 12px;
+    font-size:13px;font-family:inherit;outline:none;background:#fff;color:#333;
+  }
+  .cloud-form input:focus{border-color:#8a8a8a;}
+  .cloud-btn{
+    border:1px solid #111;background:#111;color:#fff;border-radius:8px;padding:9px 18px;
+    font-size:13px;font-family:inherit;cursor:pointer;transition:opacity .15s;
+  }
+  .cloud-btn:hover{opacity:.85;}
+  .cloud-btn.ghost{background:#fff;color:#111;border-color:#d8d2c8;}
+  .cloud-btn.ghost:hover{border-color:#111;background:#faf8f2;}
+  .cloud-logged{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+  .cloud-user{font-size:13px;color:#333;}
+  .cloud-user b{font-weight:600;}
+  .cloud-tag{font-size:11px;color:#4a7d4a;background:#eef7ee;border:1px solid #d5e9d5;border-radius:20px;padding:3px 10px;}
+  .cloud-hint{font-size:12px;color:#8a8a8a;margin-top:8px;line-height:1.6;}
+  .cloud-hint.err{color:#c0392b;}
+  .cloud-hint.ok{color:#4a7d4a;}
 </style>
 </head>
 <body>
@@ -486,7 +510,21 @@
   <div class="gallery-wrap">
     <div class="gallery-head">
       <h2>作品库</h2>
-      <p class="sub">导出图片或点"存入作品库"后，作品会自动保存在这里（仅存于本机浏览器）。点击任一作品可回到编辑器继续编辑。</p>
+      <p class="sub">导出图片或点"存入作品库"后，作品会自动保存在这里。点击任一作品可回到编辑器继续编辑。</p>
+    </div>
+    <div class="cloud-panel" id="cloudPanel" style="display:none;">
+      <div class="cloud-logged" id="cbLoggedBox" style="display:none;">
+        <span class="cloud-user">已登录：<b id="cbUserName"></b></span>
+        <button type="button" class="cloud-btn" id="btnCbLogout">退出登录</button>
+        <span class="cloud-tag">云端同步已开启</span>
+      </div>
+      <div class="cloud-form" id="cbLoginBox">
+        <input type="text" id="cbUsername" placeholder="用户名（不支持中文）" autocomplete="username">
+        <input type="password" id="cbPassword" placeholder="密码" autocomplete="current-password">
+        <button type="button" class="cloud-btn" id="btnCbLogin">登录</button>
+        <button type="button" class="cloud-btn ghost" id="btnCbSignup">注册</button>
+      </div>
+      <div class="cloud-hint" id="cbHint"></div>
     </div>
     <div class="gallery-grid" id="galleryGrid"></div>
     <div class="gallery-empty" id="galleryEmpty">还没有作品。<br>在两个编辑器里点"导出高清图片"或"存入作品库"，作品就会出现在这里。</div>
@@ -963,6 +1001,197 @@ function route(){
 const GALLERY_KEY = 'weddingGallery_v1';
 const GALLERY_MAX = 30;
 
+/* ===== CloudBase 云端同步（登录 + 作品库跨设备） =====
+   环境 ID 获取：访问地址后加 ?env=你的环境ID（如 ...?env=abc-123），会自动记住
+   未配置环境时，作品库照常以本地模式工作 */
+function readCloudEnv(){
+  try{
+    const q = new URLSearchParams(location.search);
+    const e = q.get('env');
+    if (e){ localStorage.setItem('cb_env', e); return e; }
+    return localStorage.getItem('cb_env') || '';
+  }catch(err){ return ''; }
+}
+const CLOUD_ENV = readCloudEnv();
+let cbApp = null, cbDb = null;
+let cbUserName = '';
+
+function isCloudReady(){
+  return !!CLOUD_ENV && !!cbApp && !!cbDb;
+}
+function getAuth(){
+  if (!cbApp) return null;
+  if (typeof cbApp.auth === 'function') return cbApp.auth();
+  return cbApp.auth || null;
+}
+function getDb(){
+  if (!cbApp) return null;
+  if (typeof cbApp.database === 'function') return cbApp.database();
+  return cbApp.database || null;
+}
+function initCloud(){
+  if (!CLOUD_ENV) return;
+  if (typeof cloudbase === 'undefined'){ cbHint('CloudBase SDK 加载失败，请检查网络后刷新', true); return; }
+  try{
+    cbApp = cloudbase.init({ env: CLOUD_ENV });
+    cbDb = getDb();
+  }catch(e){ cbApp = null; cbHint('CloudBase 初始化失败：' + e.message, true); }
+}
+function cbHint(msg, isErr){
+  const h = $('#cbHint'); if (!h) return;
+  h.textContent = msg;
+  h.className = 'cloud-hint' + (isErr ? ' err' : ' ok');
+}
+async function cbDoLogin(username, password){
+  const a = getAuth(); if (!a) return {error:'云端未初始化'};
+  try{
+    if (typeof a.signInWithPassword === 'function'){
+      const r = await a.signInWithPassword({username: username, password: password});
+      return {ok:true, r:r};
+    }
+    if (typeof a.signInWithUsernameAndPassword === 'function'){
+      const r = await a.signInWithUsernameAndPassword(username, password);
+      return {ok:true, r:r};
+    }
+    return {error:'当前 SDK 不支持用户名密码登录'};
+  }catch(e){ return {error: e.message || '登录失败'}; }
+}
+async function cbDoSignup(username, password){
+  const a = getAuth(); if (!a) return {error:'云端未初始化'};
+  try{
+    if (typeof a.signUpWithPassword === 'function'){
+      const r = await a.signUpWithPassword({username: username, password: password});
+      return {ok:true, r:r};
+    }
+    if (typeof a.signUpWithUsernameAndPassword === 'function'){
+      const r = await a.signUpWithUsernameAndPassword(username, password);
+      return {ok:true, r:r};
+    }
+    return {error:'当前 SDK 不支持用户名注册'};
+  }catch(e){ return {error: e.message || '注册失败'}; }
+}
+async function cbDoLogout(){
+  const a = getAuth(); if (!a) return;
+  try{ await a.signOut(); }catch(e){}
+}
+async function cbGetOpenid(){
+  const a = getAuth(); if (!a) return null;
+  try{ const ls = await a.getLoginState(); if (ls && ls.user && ls.user.openid) return ls.user.openid; }catch(e){}
+  try{ if (a.currentUser && a.currentUser.openid) return a.currentUser.openid; }catch(e){}
+  return null;
+}
+async function cbIsLogged(){
+  const a = getAuth(); if (!a) return false;
+  try{ return !!(await a.getLoginState()); }catch(e){ return false; }
+}
+/* 云端集合（works）全部作品 */
+async function cbFetchAll(){
+  const openid = await cbGetOpenid();
+  if (!openid) return [];
+  const out = [], col = cbDb.collection('works');
+  let skip = 0;
+  while (true){
+    const r = await col.where({_openid: openid}).skip(skip).limit(100).get();
+    out.push.apply(out, r.data || []);
+    if (!r.data || r.data.length < 100) break;
+    skip += 100;
+  }
+  return out;
+}
+/* 登录后同步：云端为主，本地未同步的上传合并 */
+async function syncFromCloud(){
+  if (!isCloudReady()) return;
+  let remote = [];
+  try{ remote = await cbFetchAll(); }
+  catch(e){ cbHint('读取云端失败：' + (e.message || e) + '（请确认已创建 works 集合且安全域名已配置）', true); return; }
+  const g = loadGallery();
+  const merged = [];
+  const seen = {};
+  remote.forEach(function(d){
+    const id = d.localId || ('c' + d._id);
+    merged.push({ id: id, cloudId: d._id, type: d.type, title: d.title, state: d.state, time: d.time });
+    seen[id] = true;
+  });
+  // 本地有、云端没有且从未同步过的 → 上传迁移
+  for (const li of g){
+    if (seen[li.id] || li.cloudId) continue;
+    try{
+      const r = await cbDb.collection('works').add({ localId: li.id, type: li.type, title: li.title, state: li.state, time: li.time });
+      li.cloudId = (r && (r.id || (r.data && r.data._id))) || null;
+      merged.push(li);
+      seen[li.id] = true;
+    }catch(e){ cbHint('部分本地作品上传失败：' + (e.message || e), true); }
+  }
+  storeGallery(merged);
+  renderGallery();
+  cbHint('云端同步完成，共 ' + merged.length + ' 条作品');
+}
+/* 登录面板 UI */
+async function refreshCloudUI(){
+  const panel = $('#cloudPanel'), box = $('#cbLoginBox'), logged = $('#cbLoggedBox'), hint = $('#cbHint');
+  if (!panel) return;
+  panel.style.display = 'block';
+  if (!CLOUD_ENV){
+    box.style.display = 'none'; logged.style.display = 'none';
+    hint.className = 'cloud-hint';
+    hint.textContent = '未配置云端环境：在网址后面加 ?env=你的环境ID（如 …?env=abc-123）即可启用登录与多设备同步；当前为本地模式。';
+    return;
+  }
+  if (typeof cloudbase === 'undefined' || !cbApp){
+    box.style.display = 'none'; logged.style.display = 'none';
+    hint.className = 'cloud-hint err';
+    hint.textContent = 'CloudBase SDK 加载失败，当前为本地模式。';
+    return;
+  }
+  const ok = await cbIsLogged();
+  if (ok){
+    box.style.display = 'none'; logged.style.display = 'flex';
+    const a = getAuth();
+    let name = cbUserName;
+    try{ const ls = await a.getLoginState(); if (ls && ls.user && (ls.user.username || ls.user.nickName)) name = ls.user.username || ls.user.nickName; }catch(e){}
+    if (!name) name = '已登录用户';
+    $('#cbUserName').textContent = name;
+    cbUserName = name;
+    hint.className = 'cloud-hint ok';
+    hint.textContent = '云端同步已开启：作品保存在云端，换设备登录同一账号即可看到。';
+    syncFromCloud();
+  } else {
+    box.style.display = 'flex'; logged.style.display = 'none';
+    hint.className = 'cloud-hint';
+    hint.textContent = '登录后可多设备同步作品；不登录也能以本地模式使用。';
+  }
+}
+/* 登录 / 注册 / 退出事件 */
+$('#btnCbLogin').addEventListener('click', async function(){
+  const u = $('#cbUsername').value.trim(), p = $('#cbPassword').value;
+  if (!u || !p){ cbHint('请输入用户名和密码', true); return; }
+  const btn = this; btn.disabled = true; btn.textContent = '登录中…';
+  const r = await cbDoLogin(u, p);
+  btn.disabled = false; btn.textContent = '登录';
+  if (r.error){ cbHint(r.error, true); return; }
+  cbUserName = u;
+  await refreshCloudUI();
+});
+$('#btnCbSignup').addEventListener('click', async function(){
+  const u = $('#cbUsername').value.trim(), p = $('#cbPassword').value;
+  if (!u || !p){ cbHint('请输入用户名和密码', true); return; }
+  if (u.length < 2 || u.length > 48){ cbHint('用户名长度需 2-48 位，且不支持中文', true); return; }
+  if (p.length < 6){ cbHint('密码至少 6 位', true); return; }
+  const btn = this; btn.disabled = true; btn.textContent = '注册中…';
+  const r = await cbDoSignup(u, p);
+  btn.disabled = false; btn.textContent = '注册';
+  if (r.error){ cbHint('注册失败：' + r.error, true); return; }
+  cbHint('注册成功，已自动登录', false);
+  cbUserName = u;
+  await refreshCloudUI();
+});
+$('#btnCbLogout').addEventListener('click', async function(){
+  await cbDoLogout();
+  cbUserName = '';
+  await refreshCloudUI();
+  autoToast('已退出登录');
+});
+
 function loadGallery(){
   try{
     const g = JSON.parse(localStorage.getItem(GALLERY_KEY));
@@ -1044,6 +1273,17 @@ function pushGalleryItem(item){
   if (g.length > GALLERY_MAX) g = g.slice(0, GALLERY_MAX);
   while (g.length > 1 && !storeGallery(g)){ g.pop(); }
   if (g.length === 1 && !storeGallery(g)){ alert('本机存储空间不足，无法存入作品库。'); return; }
+  // 已登录：同步写入云端
+  if (isCloudReady()){
+    cbDb.collection('works').add({ localId: item.id, type: item.type, title: item.title, state: item.state, time: item.time })
+      .then(function(r){
+        item.cloudId = (r && (r.id || (r.data && r.data._id))) || null;
+        const gg = loadGallery();
+        gg.forEach(function(x){ if (x.id === item.id && !x.cloudId) x.cloudId = item.cloudId; });
+        storeGallery(gg);
+      })
+      .catch(function(e){ cbHint('云端保存失败：' + (e && e.message || e) + '（请确认已创建 works 集合）', true); });
+  }
   autoToast('已存入作品库');
   if ($('#view_gallery').classList.contains('active')) renderGallery();
 }
@@ -1103,9 +1343,14 @@ function openGalleryItem(id){
 /* 删除作品 */
 function delGalleryItem(id){
   if (!confirm('删除这条作品？删除后不可恢复。')) return;
+  const old = loadGallery().filter(function(x){ return x.id === id; })[0];
   const g = loadGallery().filter(function(x){ return x.id !== id; });
   storeGallery(g);
   renderGallery();
+  // 已登录：同步删除云端
+  if (old && old.cloudId && isCloudReady()){
+    cbDb.collection('works').doc(old.cloudId).remove().catch(function(){});
+  }
 }
 /* 事件：网格点击（委托） */
 $('#galleryGrid').addEventListener('click', function(e){
@@ -1402,6 +1647,10 @@ function initCustomSelect(selId, triggerId, menuId, renderFn, saveFn){
 }
 initCustomSelect('inp_font', 'fontTrigger', 'fontMenu', render, save);
 initCustomSelect('inp_schedFont', 'schedFontTrigger', 'schedFontMenu', renderSched, saveSched);
+
+/* ---------- CloudBase 启动 ---------- */
+initCloud();
+refreshCloudUI();
 
 window.addEventListener('hashchange', route);
 route();
