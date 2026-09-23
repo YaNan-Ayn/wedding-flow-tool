@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>婚礼流程编辑器</title>
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    background: #f7f5f2;
+    color: #333;
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .wrap { max-width: 420px; padding: 24px; }
+  .title { font-size: 22px; font-weight: 600; letter-spacing: 2px; margin-bottom: 16px; color: #2b2b2b; }
+  .sub { font-size: 15px; color: #777; line-height: 1.8; margin-bottom: 24px; }
+  a.btn {
+    display: inline-block;
+    padding: 12px 36px;
+    background: #2b2b2b;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 8px;
+    font-size: 15px;
+    letter-spacing: 1px;
+  }
+  a.btn:active { opacity: .85; }
+  .tip { margin-top: 18px; font-size: 12px; color: #aaa; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="title">婚礼流程编辑器</div>
+    <div class="sub">正在进入编辑器，请稍候…<br>若未自动跳转，请点击下方按钮</div>
+    <a class="btn" href="https://wedding-tool-d2gowbdg8045b527c-1492265838.tcloudbaseapp.com/">进入编辑器</a>
+    <div class="tip">推荐使用微信内置浏览器或 Safari 打开</div>
+  </div>
+  <script>
+    // 自动跳转：3 秒后仍留在本页则跳转
+    setTimeout(function () {
+      window.location.replace("https://wedding-tool-d2gowbdg8045b527c-1492265838.tcloudbaseapp.com/");
+    }, 3000);
+  </script>
+</body>
+</html>
