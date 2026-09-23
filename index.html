@@ -540,7 +540,6 @@
         <input type="text" id="cbUsername" placeholder="用户名（不支持中文）" autocomplete="username">
         <input type="password" id="cbPassword" placeholder="密码" autocomplete="current-password">
         <button type="button" class="cloud-btn" id="btnCbLogin">登录</button>
-        <button type="button" class="cloud-btn ghost" id="btnCbSignup">注册</button>
       </div>
       <div class="cloud-hint" id="cbHint"></div>
     </div>
@@ -1072,20 +1071,6 @@ async function cbDoLogin(username, password){
     return {error:'当前 SDK 不支持用户名密码登录'};
   }catch(e){ return {error: e.message || '登录失败'}; }
 }
-async function cbDoSignup(username, password){
-  const a = getAuth(); if (!a) return {error:'云端未初始化'};
-  try{
-    if (typeof a.signUpWithPassword === 'function'){
-      const r = await a.signUpWithPassword({username: username, password: password});
-      return {ok:true, r:r};
-    }
-    if (typeof a.signUpWithUsernameAndPassword === 'function'){
-      const r = await a.signUpWithUsernameAndPassword(username, password);
-      return {ok:true, r:r};
-    }
-    return {error:'当前 SDK 不支持用户名注册'};
-  }catch(e){ return {error: e.message || '注册失败'}; }
-}
 async function cbDoLogout(){
   const a = getAuth(); if (!a) return;
   try{ await a.signOut(); }catch(e){}
@@ -1182,7 +1167,7 @@ async function refreshCloudUI(){
     hint.textContent = '登录后可多设备同步作品，请登录后使用。';
   }
 }
-/* 登录 / 注册 / 退出事件 */
+/* 登录 / 退出事件 */
 $('#btnCbLogin').addEventListener('click', async function(){
   const u = $('#cbUsername').value.trim(), p = $('#cbPassword').value;
   if (!u || !p){ cbHint('请输入用户名和密码', true); return; }
@@ -1190,19 +1175,6 @@ $('#btnCbLogin').addEventListener('click', async function(){
   const r = await cbDoLogin(u, p);
   btn.disabled = false; btn.textContent = '登录';
   if (r.error){ cbHint(r.error, true); return; }
-  cbUserName = u;
-  await refreshCloudUI();
-});
-$('#btnCbSignup').addEventListener('click', async function(){
-  const u = $('#cbUsername').value.trim(), p = $('#cbPassword').value;
-  if (!u || !p){ cbHint('请输入用户名和密码', true); return; }
-  if (u.length < 2 || u.length > 48){ cbHint('用户名长度需 2-48 位，且不支持中文', true); return; }
-  if (p.length < 6){ cbHint('密码至少 6 位', true); return; }
-  const btn = this; btn.disabled = true; btn.textContent = '注册中…';
-  const r = await cbDoSignup(u, p);
-  btn.disabled = false; btn.textContent = '注册';
-  if (r.error){ cbHint('注册失败：' + r.error, true); return; }
-  cbHint('注册成功，已自动登录', false);
   cbUserName = u;
   await refreshCloudUI();
 });
