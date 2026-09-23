@@ -1062,6 +1062,7 @@ async function cbDoLogin(username, password){
   try{
     if (typeof a.signInWithPassword === 'function'){
       const r = await a.signInWithPassword({username: username, password: password});
+      if (r && r.error) return {error: (r.error && (r.error.message || r.error.msg)) || '登录失败，请检查账号密码或登录方式是否开启'};
       return {ok:true, r:r};
     }
     if (typeof a.signInWithUsernameAndPassword === 'function'){
