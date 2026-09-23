@@ -1002,15 +1002,16 @@ const GALLERY_KEY = 'weddingGallery_v1';
 const GALLERY_MAX = 30;
 
 /* ===== CloudBase 云端同步（登录 + 作品库跨设备） =====
-   环境 ID 获取：访问地址后加 ?env=你的环境ID（如 ...?env=abc-123），会自动记住
+   环境 ID 获取：默认使用 wedding-tool-d2gowbdg8045b527c；访问地址加 ?env=你的环境ID 可覆盖并自动记住
    未配置环境时，作品库照常以本地模式工作 */
 function readCloudEnv(){
+  const DEF_ENV = 'wedding-tool-d2gowbdg8045b527c';
   try{
     const q = new URLSearchParams(location.search);
     const e = q.get('env');
     if (e){ localStorage.setItem('cb_env', e); return e; }
-    return localStorage.getItem('cb_env') || '';
-  }catch(err){ return ''; }
+    return localStorage.getItem('cb_env') || DEF_ENV;
+  }catch(err){ return DEF_ENV; }
 }
 const CLOUD_ENV = readCloudEnv();
 let cbApp = null, cbDb = null;
