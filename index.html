@@ -231,6 +231,17 @@
 </style>
 </head>
 <body>
+<script>
+(function(){
+  try{
+    var host = location.hostname || '';
+    var ok = host.indexOf('tcloudbaseapp.com') > -1;
+    if (!ok){
+      location.replace('https://wedding-tool-d2gowbdg8045b527c-1492265838.tcloudbaseapp.com/');
+    }
+  }catch(e){}
+})();
+</script>
   <!-- ===== 选择页 ===== -->
   <div id="view_home" class="view active">
     <div class="home-wrap">
