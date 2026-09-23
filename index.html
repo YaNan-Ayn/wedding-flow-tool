@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=ZCOOL+XiaoWei&family=Noto+Sans+SC:wght@300;400;500;700&family=Playfair+Display:wght@400;600&family=Great+Vibes&display=swap">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css">
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://static.cloudbase.net/cloudbase-js-sdk/2.27.1/cloudbase.full.js"></script>
+<script src="https://static.cloudbase.net/cloudbase-js-sdk/3.10.1/cloudbase.full.js"></script>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:'Noto Serif SC','Songti SC','SimSun',serif;background:#f0ece6;color:#1a1a1a;}
@@ -1088,8 +1088,8 @@ async function cbDoLogout(){
 }
 async function cbGetOpenid(){
   const a = getAuth(); if (!a) return null;
-  try{ const ls = await a.getLoginState(); if (ls && ls.user && ls.user.openid) return ls.user.openid; }catch(e){}
-  try{ if (a.currentUser && a.currentUser.openid) return a.currentUser.openid; }catch(e){}
+  try{ const ls = await a.getLoginState(); if (ls && ls.user) return ls.user.id || ls.user.openid || null; }catch(e){}
+  try{ if (a.currentUser) return a.currentUser.id || a.currentUser.openid || null; }catch(e){}
   return null;
 }
 async function cbIsLogged(){
@@ -1103,7 +1103,7 @@ async function cbFetchAll(){
   const out = [], col = cbDb.collection('works');
   let skip = 0;
   while (true){
-    const r = await col.where({_openid: openid}).skip(skip).limit(100).get();
+    const r = await col.where({owner: openid}).skip(skip).limit(100).get();
     out.push.apply(out, r.data || []);
     if (!r.data || r.data.length < 100) break;
     skip += 100;
@@ -1128,7 +1128,7 @@ async function syncFromCloud(){
   for (const li of g){
     if (seen[li.id] || li.cloudId) continue;
     try{
-      const r = await cbDb.collection('works').add({ localId: li.id, type: li.type, title: li.title, state: li.state, time: li.time });
+      const r = await cbDb.collection('works').add({ owner: openid, localId: li.id, type: li.type, title: li.title, state: li.state, time: li.time });
       li.cloudId = (r && (r.id || (r.data && r.data._id))) || null;
       merged.push(li);
       seen[li.id] = true;
@@ -1163,7 +1163,7 @@ async function refreshCloudUI(){
     gate.classList.remove('show');
     const a = getAuth();
     let name = cbUserName;
-    try{ const ls = await a.getLoginState(); if (ls && ls.user && (ls.user.username || ls.user.nickName)) name = ls.user.username || ls.user.nickName; }catch(e){}
+    try{ const ls = await a.getLoginState(); if (ls && ls.user){ const u = ls.user; const um = u.user_metadata || {}; name = um.username || um.nickName || u.username || u.nickName || name; } }catch(e){}
     if (!name) name = '已登录用户';
     if ($('#cbUserName')) $('#cbUserName').textContent = name;
     cbUserName = name;
