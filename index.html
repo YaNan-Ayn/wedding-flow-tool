@@ -214,6 +214,15 @@
   .cloud-hint{font-size:12px;color:#8a8a8a;margin-top:8px;line-height:1.6;}
   .cloud-hint.err{color:#c0392b;}
   .cloud-hint.ok{color:#4a7d4a;}
+  /* 全屏登录门禁 */
+  .login-gate{position:fixed;inset:0;z-index:9999;background:rgba(40,32,24,.62);display:none;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;}
+  .login-gate.show{display:flex;}
+  .login-card{background:#fffdf8;border-radius:16px;padding:30px 26px;width:100%;max-width:340px;box-shadow:0 16px 48px rgba(0,0,0,.32);box-sizing:border-box;}
+  .login-title{font-size:20px;font-weight:600;color:#2b2118;text-align:center;letter-spacing:3px;}
+  .login-sub{font-size:12px;color:#9a8f80;text-align:center;margin:8px 0 18px;}
+  .login-card .cloud-form input{flex:1 1 100%;}
+  .login-card .cloud-form .cloud-btn{flex:1 1 45%;}
+  .login-card .cloud-hint{text-align:center;}
 </style>
 </head>
 <body>
@@ -512,12 +521,21 @@
       <h2>作品库</h2>
       <p class="sub">导出图片或点"存入作品库"后，作品会自动保存在这里。点击任一作品可回到编辑器继续编辑。</p>
     </div>
-    <div class="cloud-panel" id="cloudPanel" style="display:none;">
-      <div class="cloud-logged" id="cbLoggedBox" style="display:none;">
-        <span class="cloud-user">已登录：<b id="cbUserName"></b></span>
-        <button type="button" class="cloud-btn" id="btnCbLogout">退出登录</button>
-        <span class="cloud-tag">云端同步已开启</span>
-      </div>
+    <div class="cloud-logged" id="cbLoggedBar" style="display:none;">
+      <span class="cloud-user">已登录：<b id="cbUserName"></b></span>
+      <button type="button" class="cloud-btn" id="btnCbLogout">退出登录</button>
+      <span class="cloud-tag">云端同步已开启</span>
+    </div>
+    <div class="gallery-grid" id="galleryGrid"></div>
+    <div class="gallery-empty" id="galleryEmpty">还没有作品。<br>在两个编辑器里点"导出高清图片"或"存入作品库"，作品就会出现在这里。</div>
+  </div>
+  </div>
+
+  <!-- ===== 登录门禁（全站） ===== -->
+  <div id="loginGate" class="login-gate">
+    <div class="login-card">
+      <div class="login-title">婚礼编辑器</div>
+      <div class="login-sub">登录后使用 · 作品云端保存</div>
       <div class="cloud-form" id="cbLoginBox">
         <input type="text" id="cbUsername" placeholder="用户名（不支持中文）" autocomplete="username">
         <input type="password" id="cbPassword" placeholder="密码" autocomplete="current-password">
@@ -526,9 +544,6 @@
       </div>
       <div class="cloud-hint" id="cbHint"></div>
     </div>
-    <div class="gallery-grid" id="galleryGrid"></div>
-    <div class="gallery-empty" id="galleryEmpty">还没有作品。<br>在两个编辑器里点"导出高清图片"或"存入作品库"，作品就会出现在这里。</div>
-  </div>
   </div>
 
 <script>
@@ -1127,39 +1142,44 @@ async function syncFromCloud(){
   renderGallery();
   cbHint('云端同步完成，共 ' + merged.length + ' 条作品');
 }
-/* 登录面板 UI */
+/* 登录门禁 UI：未登录全屏拦截，已登录放行 */
 async function refreshCloudUI(){
-  const panel = $('#cloudPanel'), box = $('#cbLoginBox'), logged = $('#cbLoggedBox'), hint = $('#cbHint');
-  if (!panel) return;
-  panel.style.display = 'block';
+  const gate = $('#loginGate'), bar = $('#cbLoggedBar'), box = $('#cbLoginBox'), hint = $('#cbHint');
+  if (!gate) return;
   if (!CLOUD_ENV){
-    box.style.display = 'none'; logged.style.display = 'none';
-    hint.className = 'cloud-hint';
-    hint.textContent = '未配置云端环境：在网址后面加 ?env=你的环境ID（如 …?env=abc-123）即可启用登录与多设备同步；当前为本地模式。';
+    gate.classList.add('show');
+    if (box) box.style.display = 'flex';
+    if (bar) bar.style.display = 'none';
+    hint.className = 'cloud-hint err';
+    hint.textContent = '云端服务未配置，无法登录使用。请联系管理员。';
     return;
   }
   if (typeof cloudbase === 'undefined' || !cbApp){
-    box.style.display = 'none'; logged.style.display = 'none';
+    gate.classList.add('show');
+    if (box) box.style.display = 'flex';
+    if (bar) bar.style.display = 'none';
     hint.className = 'cloud-hint err';
-    hint.textContent = 'CloudBase SDK 加载失败，当前为本地模式。';
+    hint.textContent = '云端服务连接失败，请刷新重试。';
     return;
   }
   const ok = await cbIsLogged();
   if (ok){
-    box.style.display = 'none'; logged.style.display = 'flex';
+    gate.classList.remove('show');
     const a = getAuth();
     let name = cbUserName;
     try{ const ls = await a.getLoginState(); if (ls && ls.user && (ls.user.username || ls.user.nickName)) name = ls.user.username || ls.user.nickName; }catch(e){}
     if (!name) name = '已登录用户';
-    $('#cbUserName').textContent = name;
+    if ($('#cbUserName')) $('#cbUserName').textContent = name;
     cbUserName = name;
-    hint.className = 'cloud-hint ok';
-    hint.textContent = '云端同步已开启：作品保存在云端，换设备登录同一账号即可看到。';
+    if (bar) bar.style.display = 'flex';
+    if (box) box.style.display = 'none';
     syncFromCloud();
   } else {
-    box.style.display = 'flex'; logged.style.display = 'none';
+    gate.classList.add('show');
+    if (box) box.style.display = 'flex';
+    if (bar) bar.style.display = 'none';
     hint.className = 'cloud-hint';
-    hint.textContent = '登录后可多设备同步作品；不登录也能以本地模式使用。';
+    hint.textContent = '登录后可多设备同步作品，请登录后使用。';
   }
 }
 /* 登录 / 注册 / 退出事件 */
