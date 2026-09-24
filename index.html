@@ -1028,6 +1028,7 @@ function showView(name){
   window.scrollTo(0, 0);
 }
 function route(){
+  if (typeof cbSyncBar === 'function') cbSyncBar();
   const h = (location.hash || '#/').replace('#/', '') || 'home';
   if (['home','ritual','schedule','gallery'].indexOf(h) === -1){ showView('home'); return; }
   showView(h);
@@ -1083,13 +1084,14 @@ function cbHint(msg, isErr){
 async function cbDoLogin(username, password){
   const a = getAuth(); if (!a) return {error:'云端未初始化'};
   try{
+    const p = cbNormPwd(password);
     if (typeof a.signInWithPassword === 'function'){
-      const r = await a.signInWithPassword({username: username, password: password});
+      const r = await a.signInWithPassword({username: username, password: p});
       if (r && r.error) return {error: (r.error && (r.error.message || r.error.msg)) || '登录失败，请检查账号密码或登录方式是否开启'};
       return {ok:true, r:r};
     }
     if (typeof a.signInWithUsernameAndPassword === 'function'){
-      const r = await a.signInWithUsernameAndPassword(username, password);
+      const r = await a.signInWithUsernameAndPassword(username, p);
       return {ok:true, r:r};
     }
     return {error:'当前 SDK 不支持用户名密码登录'};
@@ -1109,6 +1111,21 @@ async function cbGetOpenid(){
 async function cbIsLogged(){
   const a = getAuth(); if (!a) return false;
   try{ return !!(await a.getLoginState()); }catch(e){ return false; }
+}
+/* 登录状态条：仅在主页右上角显示 */
+function cbSyncBar(){
+  const bar = $('#cbLoggedBar'); if (!bar) return;
+  if (bar.style.display !== 'flex') return;
+  const onHome = (location.hash === '' || location.hash === '#/' || location.hash === '#');
+  bar.style.display = onHome ? 'flex' : 'none';
+}
+/* 密码全角转半角（兼容全角符号输入） */
+function cbNormPwd(s){
+  if (!s) return s;
+  return s.replace(/[\uFF01-\uFF5E\u3000]/g, function(ch){
+    if (ch === '\u3000') return ' ';
+    return String.fromCharCode(ch.charCodeAt(0) - 0xFEE0);
+  });
 }
 /* ===== 设备绑定 / 顶号 / 有效期（PostgreSQL 版，rdb 通道）===== */
 const MAX_BOUND_DEVICES = 2;
@@ -1292,7 +1309,7 @@ async function refreshCloudUI(){
     if (!name) name = '已登录用户';
     if ($('#cbUserName')) $('#cbUserName').textContent = name;
     cbUserName = name;
-    if (bar) bar.style.display = 'flex';
+    cbSyncBar();
     if (box) box.style.display = 'none';
     cbHint('', false);
     cbStartWatch();
@@ -1301,7 +1318,7 @@ async function refreshCloudUI(){
     if (box) box.style.display = 'flex';
     if (bar) bar.style.display = 'none';
     hint.className = 'cloud-hint';
-    hint.textContent = '登录后可正常使用（同一账号限 2 台设备绑定）。';
+    hint.textContent = '登录后正常使用，若更换设备或浏览器需重新登陆。';
   }
 }
 /* 密码显示 / 隐藏 */
