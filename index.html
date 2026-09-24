@@ -207,10 +207,11 @@
   .cloud-btn:hover{opacity:.85;}
   .cloud-btn.ghost{background:#fff;color:#111;border-color:#d8d2c8;}
   .cloud-btn.ghost:hover{border-color:#111;background:#faf8f2;}
-  .cloud-logged{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
-  .cloud-user{font-size:13px;color:#333;}
+  .cloud-logged{position:fixed;top:14px;right:16px;z-index:300;display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #e2ddd2;border-radius:24px;padding:6px 8px 6px 14px;box-shadow:0 2px 10px rgba(0,0,0,.06);}
+  .cloud-user{font-size:12px;color:#333;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .cloud-user b{font-weight:600;}
   .cloud-tag{font-size:11px;color:#4a7d4a;background:#eef7ee;border:1px solid #d5e9d5;border-radius:20px;padding:3px 10px;}
+  @media (max-width:640px){ .cloud-logged{top:10px;right:10px;padding:5px 6px 5px 10px;} .cloud-user{font-size:11px;max-width:110px;} .cloud-logged .cloud-btn{padding:4px 10px;font-size:12px;} }
   .cloud-hint{font-size:12px;color:#8a8a8a;margin-top:8px;line-height:1.6;}
   .cloud-hint.err{color:#c0392b;}
   .cloud-hint.ok{color:#4a7d4a;}
@@ -537,21 +538,22 @@
       <h2>作品库</h2>
       <p class="sub">导出图片或点"存入作品库"后，作品会自动保存在这里。点击任一作品可回到编辑器继续编辑。</p>
     </div>
-    <div class="cloud-logged" id="cbLoggedBar" style="display:none;">
-      <span class="cloud-user">已登录：<b id="cbUserName"></b></span>
-      <button type="button" class="cloud-btn" id="btnCbLogout">退出登录</button>
-      <span class="cloud-tag">云端同步已开启</span>
-    </div>
     <div class="gallery-grid" id="galleryGrid"></div>
     <div class="gallery-empty" id="galleryEmpty">还没有作品。<br>在两个编辑器里点"导出高清图片"或"存入作品库"，作品就会出现在这里。</div>
   </div>
+  </div>
+
+  <!-- ===== 登录状态条（全局右上角） ===== -->
+  <div class="cloud-logged" id="cbLoggedBar" style="display:none;">
+    <span class="cloud-user">已登录：<b id="cbUserName"></b></span>
+    <button type="button" class="cloud-btn" id="btnCbLogout">退出登录</button>
   </div>
 
   <!-- ===== 登录门禁（全站） ===== -->
   <div id="loginGate" class="login-gate">
     <div class="login-card">
       <div class="login-title">婚礼编辑器</div>
-      <div class="login-sub">登录后使用 · 作品云端保存</div>
+      <div class="login-sub">登录后使用 · 作品保存在本机</div>
       <div class="cloud-form" id="cbLoginBox">
         <input type="text" id="cbUsername" placeholder="用户名（不支持中文）" autocomplete="username">
         <div class="pw-wrap">
