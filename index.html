@@ -1107,6 +1107,105 @@ async function cbIsLogged(){
   const a = getAuth(); if (!a) return false;
   try{ return !!(await a.getLoginState()); }catch(e){ return false; }
 }
+/* ===== 设备绑定 / 顶号 / 有效期（PostgreSQL 版，rdb 通道）===== */
+const MAX_BOUND_DEVICES = 2;
+const DEVICE_KEY = 'wd_dev_id';
+function getDeviceId(){
+  try{
+    let d = localStorage.getItem(DEVICE_KEY);
+    if (!d){ d = 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2,8); localStorage.setItem(DEVICE_KEY, d); }
+    return d;
+  }catch(e){ return 'd' + Math.random().toString(36).slice(2,10); }
+}
+function getRdb(){
+  try{
+    if (cbApp && typeof cbApp.rdb === 'function') return cbApp.rdb();
+    return cbApp ? (cbApp.rdb || null) : null;
+  }catch(e){ return null; }
+}
+/* 登录成功后调用：注册本设备。返回 {ok, first, kicked} */
+async function cbBindDevice(uid){
+  const rdb = getRdb();
+  if (!rdb || !uid) return {ok:false, first:false, kicked:false};
+  try{
+    const devId = getDeviceId();
+    const mine = await rdb.from('devices').select('id').eq('owner', uid).eq('device_id', devId);
+    if (mine.data && mine.data.length){
+      await rdb.from('devices').update({last_active: Date.now()}).eq('owner', uid).eq('device_id', devId);
+      return {ok:true, first:false, kicked:false};
+    }
+    const all = await rdb.from('devices').select('id,last_active').eq('owner', uid).order('last_active');
+    const list = all.data || [];
+    const first = list.length === 0;
+    if (list.length < MAX_BOUND_DEVICES){
+      await rdb.from('devices').insert({owner: uid, device_id: devId, bind_at: Date.now(), last_active: Date.now()});
+      return {ok:true, first:first, kicked:false};
+    }
+    if (list[0] && list[0].id != null){
+      await rdb.from('devices').delete().eq('owner', uid).eq('id', list[0].id);
+    }
+    await rdb.from('devices').insert({owner: uid, device_id: devId, bind_at: Date.now(), last_active: Date.now()});
+    return {ok:true, first:false, kicked:true};
+  }catch(e){
+    return {ok:false, first:false, kicked:false};
+  }
+}
+/* 打开页面校验：本设备是否仍在绑定列表（被顶则 false） */
+async function cbCheckDevice(uid){
+  const rdb = getRdb();
+  if (!rdb || !uid) return true;
+  try{
+    const devId = getDeviceId();
+    const mine = await rdb.from('devices').select('id').eq('owner', uid).eq('device_id', devId);
+    if (mine.data && mine.data.length){
+      rdb.from('devices').update({last_active: Date.now()}).eq('owner', uid).eq('device_id', devId).catch(function(){});
+      return true;
+    }
+    return false;
+  }catch(e){ return true; }
+}
+/* 有效期校验（预留）：accounts.expire_at 未配置 = 永久 */
+async function cbCheckExpiry(uid){
+  const rdb = getRdb();
+  if (!rdb || !uid) return {expired:false};
+  try{
+    const r = await rdb.from('accounts').select('expire_at').eq('owner', uid).limit(1);
+    const rec = r.data && r.data[0];
+    if (rec && rec.expire_at && Date.now() > rec.expire_at) return {expired:true, expire_at: rec.expire_at};
+    return {expired:false};
+  }catch(e){ return {expired:false}; }
+}
+/* 被顶下线 / 到期统一处理 */
+async function cbHandleKicked(msg){
+  if (window.__devCheckTimer){ clearInterval(window.__devCheckTimer); window.__devCheckTimer = null; }
+  await cbDoLogout();
+  cbUserName = '';
+  const gate = $('#loginGate'); if (gate) gate.classList.add('show');
+  const box = $('#cbLoginBox'); if (box) box.style.display = 'flex';
+  const bar = $('#cbLoggedBar'); if (bar) bar.style.display = 'none';
+  const hint = $('#cbHint');
+  if (hint){ hint.className = 'cloud-hint err'; hint.textContent = msg; }
+  try{ autoToast(msg); }catch(e){}
+}
+/* 登录态保持期间：每 60 秒校验一次设备与有效期 */
+async function cbStartWatch(){
+  if (window.__devCheckTimer) clearInterval(window.__devCheckTimer);
+  window.__devCheckTimer = setInterval(async function(){
+    const uid = await cbGetOpenid();
+    if (!uid) return;
+    const still = await cbCheckDevice(uid);
+    if (!still){
+      clearInterval(window.__devCheckTimer); window.__devCheckTimer = null;
+      cbHandleKicked('本设备已被解绑（该账号在别的设备登录，挤掉了最久未用的设备），请重新登录。');
+      return;
+    }
+    const exp = await cbCheckExpiry(uid);
+    if (exp.expired){
+      clearInterval(window.__devCheckTimer); window.__devCheckTimer = null;
+      cbHandleKicked('该账号使用期限已到，请联系管理员续期。');
+    }
+  }, 60000);
+}
 /* 云端集合（works）全部作品 */
 async function cbFetchAll(){
   const openid = await cbGetOpenid();
@@ -1171,6 +1270,18 @@ async function refreshCloudUI(){
   }
   const ok = await cbIsLogged();
   if (ok){
+    // 设备与有效期校验（被顶 / 到期则登出）
+    const uid = await cbGetOpenid();
+    const stillBound = await cbCheckDevice(uid);
+    if (!stillBound){
+      await cbHandleKicked('本设备已被解绑（该账号在别的设备登录，挤掉了最久未用的设备），请重新登录。');
+      return;
+    }
+    const exp = await cbCheckExpiry(uid);
+    if (exp.expired){
+      await cbHandleKicked('该账号使用期限已到，请联系管理员续期。');
+      return;
+    }
     gate.classList.remove('show');
     const a = getAuth();
     let name = cbUserName;
@@ -1180,13 +1291,13 @@ async function refreshCloudUI(){
     cbUserName = name;
     if (bar) bar.style.display = 'flex';
     if (box) box.style.display = 'none';
-    syncFromCloud();
+    cbStartWatch();
   } else {
     gate.classList.add('show');
     if (box) box.style.display = 'flex';
     if (bar) bar.style.display = 'none';
     hint.className = 'cloud-hint';
-    hint.textContent = '登录后可多设备同步作品，请登录后使用。';
+    hint.textContent = '登录后可正常使用（同一账号限 2 台设备绑定）。';
   }
 }
 /* 密码显示 / 隐藏 */
@@ -1212,9 +1323,21 @@ $('#btnCbLogin').addEventListener('click', async function(){
   btn.disabled = false; btn.textContent = '登录';
   if (r.error){ cbHint(r.error, true); return; }
   cbUserName = u;
+  const uid = await cbGetOpenid();
+  if (uid){
+    const exp = await cbCheckExpiry(uid);
+    if (exp.expired){
+      await cbHandleKicked('该账号使用期限已到，请联系管理员续期。');
+      return;
+    }
+    const bd = await cbBindDevice(uid);
+    if (bd.ok && bd.kicked) autoToast('该账号已绑定 2 台设备，已将最久未用的一台设备下线');
+    else if (bd.ok && bd.first) autoToast('首次登录，本设备已绑定');
+  }
   await refreshCloudUI();
 });
 $('#btnCbLogout').addEventListener('click', async function(){
+  if (window.__devCheckTimer){ clearInterval(window.__devCheckTimer); window.__devCheckTimer = null; }
   await cbDoLogout();
   cbUserName = '';
   await refreshCloudUI();
