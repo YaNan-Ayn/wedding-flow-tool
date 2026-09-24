@@ -1197,7 +1197,7 @@ async function cbStartWatch(){
     const still = await cbCheckDevice(uid);
     if (!still){
       clearInterval(window.__devCheckTimer); window.__devCheckTimer = null;
-      cbHandleKicked('本设备已被解绑（该账号在别的设备登录，挤掉了最久未用的设备），请重新登录。');
+      cbHandleKicked('本设备已在其他设备登录时被解绑，请重新登录。');
       return;
     }
     const exp = await cbCheckExpiry(uid);
@@ -1275,7 +1275,7 @@ async function refreshCloudUI(){
     const uid = await cbGetOpenid();
     const stillBound = await cbCheckDevice(uid);
     if (!stillBound){
-      await cbHandleKicked('本设备已被解绑（该账号在别的设备登录，挤掉了最久未用的设备），请重新登录。');
+      await cbHandleKicked('本设备未绑定或已被解绑，请重新登录后使用。');
       return;
     }
     const exp = await cbCheckExpiry(uid);
@@ -1292,6 +1292,7 @@ async function refreshCloudUI(){
     cbUserName = name;
     if (bar) bar.style.display = 'flex';
     if (box) box.style.display = 'none';
+    cbHint('', false);
     cbStartWatch();
   } else {
     gate.classList.add('show');
