@@ -1098,9 +1098,10 @@ async function cbDoLogout(){
   try{ await a.signOut(); }catch(e){}
 }
 async function cbGetOpenid(){
+  try{ const c = localStorage.getItem('wd_uid'); if (c) return c; }catch(e){}
   const a = getAuth(); if (!a) return null;
-  try{ const ls = await a.getLoginState(); if (ls && ls.user) return ls.user.id || ls.user.openid || null; }catch(e){}
-  try{ if (a.currentUser) return a.currentUser.id || a.currentUser.openid || null; }catch(e){}
+  try{ const ls = await a.getLoginState(); if (ls && ls.user) return ls.user.uid || ls.user.id || ls.user.openid || null; }catch(e){}
+  try{ if (a.currentUser) return a.currentUser.uid || a.currentUser.id || a.currentUser.openid || null; }catch(e){}
   return null;
 }
 async function cbIsLogged(){
@@ -1325,6 +1326,7 @@ $('#btnCbLogin').addEventListener('click', async function(){
   cbUserName = u;
   const uid = await cbGetOpenid();
   if (uid){
+    try{ localStorage.setItem('wd_uid', uid); }catch(e){}
     const exp = await cbCheckExpiry(uid);
     if (exp.expired){
       await cbHandleKicked('该账号使用期限已到，请联系管理员续期。');
