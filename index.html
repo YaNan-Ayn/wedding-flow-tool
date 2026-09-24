@@ -1115,7 +1115,7 @@ async function cbIsLogged(){
 /* 登录状态条：仅在主页右上角显示 */
 function cbSyncBar(){
   const bar = $('#cbLoggedBar'); if (!bar) return;
-  if (bar.style.display !== 'flex') return;
+  if (bar.dataset.logged !== '1'){ bar.style.display = 'none'; return; }
   const onHome = (location.hash === '' || location.hash === '#/' || location.hash === '#');
   bar.style.display = onHome ? 'flex' : 'none';
 }
@@ -1202,7 +1202,7 @@ async function cbHandleKicked(msg){
   cbUserName = '';
   const gate = $('#loginGate'); if (gate) gate.classList.add('show');
   const box = $('#cbLoginBox'); if (box) box.style.display = 'flex';
-  const bar = $('#cbLoggedBar'); if (bar) bar.style.display = 'none';
+  const bar = $('#cbLoggedBar'); if (bar){ bar.dataset.logged = '0'; bar.style.display = 'none'; }
   const hint = $('#cbHint');
   if (hint){ hint.className = 'cloud-hint err'; hint.textContent = msg; }
   try{ autoToast(msg); }catch(e){}
@@ -1275,7 +1275,7 @@ async function refreshCloudUI(){
   if (!CLOUD_ENV){
     gate.classList.add('show');
     if (box) box.style.display = 'flex';
-    if (bar) bar.style.display = 'none';
+    if (bar){ bar.dataset.logged = '0'; bar.style.display = 'none'; }
     hint.className = 'cloud-hint err';
     hint.textContent = '云端服务未配置，无法登录使用。请联系管理员。';
     return;
@@ -1283,7 +1283,7 @@ async function refreshCloudUI(){
   if (typeof cloudbase === 'undefined' || !cbApp){
     gate.classList.add('show');
     if (box) box.style.display = 'flex';
-    if (bar) bar.style.display = 'none';
+    if (bar){ bar.dataset.logged = '0'; bar.style.display = 'none'; }
     hint.className = 'cloud-hint err';
     hint.textContent = '云端服务连接失败，请刷新重试。';
     return;
@@ -1309,6 +1309,7 @@ async function refreshCloudUI(){
     if (!name) name = '已登录用户';
     if ($('#cbUserName')) $('#cbUserName').textContent = name;
     cbUserName = name;
+    if (bar) bar.dataset.logged = '1';
     cbSyncBar();
     if (box) box.style.display = 'none';
     cbHint('', false);
@@ -1316,7 +1317,7 @@ async function refreshCloudUI(){
   } else {
     gate.classList.add('show');
     if (box) box.style.display = 'flex';
-    if (bar) bar.style.display = 'none';
+    if (bar){ bar.dataset.logged = '0'; bar.style.display = 'none'; }
     hint.className = 'cloud-hint';
     hint.textContent = '登录后正常使用，若更换设备或浏览器需重新登陆。';
   }
