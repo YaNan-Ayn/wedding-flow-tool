@@ -295,15 +295,15 @@
     <div class="sec-title">基本信息</div>
     <div style="margin-bottom:10px;">
       <label class="lbl"><b>新人名字</b></label>
-      <input type="text" id="inp_name" value="新郎小张 新娘小苏">
+      <input type="text" id="inp_name" value="">
     </div>
     <div style="margin-bottom:10px;">
       <label class="lbl"><b>酒店名称</b></label>
-      <input type="text" id="inp_hotel" value="XXXX大酒店">
+      <input type="text" id="inp_hotel" value="">
     </div>
     <div style="margin-bottom:10px;">
       <label class="lbl"><b>婚礼日期</b></label>
-      <input type="text" id="inp_date" value="2026.12.12">
+      <input type="text" id="inp_date" value="">
     </div>
     <div>
       <label class="lbl"><b>流程清单</b><span class="val">每行一项</span></label>
@@ -439,11 +439,11 @@
       <div class="sec-title">标题</div>
       <div style="margin-bottom:12px;">
         <label class="lbl"><b>卡片标题</b></label>
-        <input type="text" id="inp_schedTitle" value="婚礼安排 ★★★★★">
+        <input type="text" id="inp_schedTitle" value="时间安排" readonly>
       </div>
       <div style="margin-bottom:12px;">
         <label class="lbl"><b>婚礼日期</b></label>
-        <input type="text" id="inp_schedDate" value="2026.10.4" placeholder="如 2026.10.4">
+        <input type="text" id="inp_schedDate" value="" placeholder="如 2026.10.4">
       </div>
       <div style="margin-bottom:12px;">
         <label class="lbl"><b>字体</b></label>
@@ -566,7 +566,7 @@
         <div class="pw-wrap">
           <input type="password" id="cbPassword" placeholder="密码" autocomplete="current-password">
           <button type="button" class="pw-eye" id="btnPwEye" aria-label="显示密码" tabindex="-1">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
           </button>
         </div>
         <button type="button" class="cloud-btn" id="btnCbLogin">登录</button>
@@ -713,13 +713,19 @@ function save(){
   };
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(data)); }catch(e){}
 }
-function restore(){
+function restore(keepMeta){
   try{
     const d = JSON.parse(localStorage.getItem(SAVE_KEY));
     if (!d) return;
-    $('#inp_name').value = d.name || $('#inp_name').value;
-    $('#inp_hotel').value = d.hotel || $('#inp_hotel').value;
-    $('#inp_date').value = d.date || $('#inp_date').value;
+    if (keepMeta){
+      $('#inp_name').value = d.name || '';
+      $('#inp_hotel').value = d.hotel || '';
+      $('#inp_date').value = d.date || '';
+    } else {
+      $('#inp_name').value = '';
+      $('#inp_hotel').value = '';
+      $('#inp_date').value = '';
+    }
     $('#inp_flow').value = d.flow || $('#inp_flow').value;
     $('#inp_foot').value = d.foot || $('#inp_foot').value;
     $('#inp_slogan').value = d.slogan || $('#inp_slogan').value;
@@ -1338,7 +1344,7 @@ async function refreshCloudUI(){
     const inp = $('#cbPassword');
     const show = inp.type === 'password';
     inp.type = show ? 'text' : 'password';
-    eye.innerHTML = show ? EYE_OFF : EYE_ON;
+    eye.innerHTML = show ? EYE_ON : EYE_OFF;
     eye.setAttribute('aria-label', show ? '隐藏密码' : '显示密码');
     inp.focus();
   });
@@ -1507,13 +1513,13 @@ function openGalleryItem(id){
   if (item.type === 'ritual'){
     try{ localStorage.setItem(SAVE_KEY, JSON.stringify(item.state)); }catch(e){}
     showView('ritual');
-    restore();
+    restore(true);
     render();
     location.hash = '#/ritual';
   } else {
     try{ localStorage.setItem(SCHED_KEY, JSON.stringify(item.state)); }catch(e){}
     showView('schedule');
-    restoreSched();
+    restoreSched(true);
     renderSched();
     const a = readAnchorTimes();
     lastT1 = a[0]; lastT2 = a[1];
@@ -1611,12 +1617,12 @@ function saveSched(){
     }));
   }catch(e){}
 }
-function restoreSched(){
+function restoreSched(keepMeta){
   try{
     const d = JSON.parse(localStorage.getItem(SCHED_KEY));
     if (!d) return;
-    if (d.title) $('#inp_schedTitle').value = d.title;
-    if (typeof d.date === 'string') $('#inp_schedDate').value = d.date;
+    if (keepMeta && typeof d.date === 'string') $('#inp_schedDate').value = d.date;
+    else $('#inp_schedDate').value = '';
     if (d.font && [...$('#inp_schedFont').options].some(function(o){ return o.value === d.font; })) $('#inp_schedFont').value = d.font;
     if (d.s1) $('#inp_s1').value = d.s1;
     if (d.s2) $('#inp_s2').value = d.s2;
