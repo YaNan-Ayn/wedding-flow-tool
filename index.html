@@ -1239,47 +1239,41 @@ async function cbStartWatch(){
     }
   }, 60000);
 }
-/* 云端集合（works）全部作品 */
+/* 云端作品（PostgreSQL gallery 表）：只取当前账号自己的 */
 async function cbFetchAll(){
-  const openid = await cbGetOpenid();
-  if (!openid) return [];
-  const out = [], col = cbDb.collection('works');
-  let skip = 0;
-  while (true){
-    const r = await col.where({owner: openid}).skip(skip).limit(100).get();
-    out.push.apply(out, r.data || []);
-    if (!r.data || r.data.length < 100) break;
-    skip += 100;
-  }
-  return out;
+  const uid = await cbGetOpenid();
+  if (!uid) return [];
+  const rdb = getRdb();
+  if (!rdb) return [];
+  const r = await rdb.from('gallery').select('id,type,title,state,time').eq('owner', uid);
+  return r.data || [];
 }
-/* 登录后同步：云端为主，本地未同步的上传合并 */
+/* 登录后同步：云端为主，本地未同步过的老作品自动上传 */
 async function syncFromCloud(){
   if (!isCloudReady()) return;
+  const uid = await cbGetOpenid();
+  if (!uid) return;
   let remote = [];
   try{ remote = await cbFetchAll(); }
-  catch(e){ cbHint('读取云端失败：' + (e.message || e) + '（请确认已创建 works 集合且安全域名已配置）', true); return; }
-  const g = loadGallery();
+  catch(e){ cbHint('读取云端作品失败：' + (e.message || e), true); return; }
   const merged = [];
-  const seen = {};
   remote.forEach(function(d){
-    const id = d.localId || ('c' + d._id);
-    merged.push({ id: id, cloudId: d._id, type: d.type, title: d.title, state: d.state, time: d.time });
-    seen[id] = true;
+    merged.push({ id: 'c' + d.id, cloudId: d.id, type: d.type, title: d.title, state: d.state, time: d.time });
   });
-  // 本地有、云端没有且从未同步过的 → 上传迁移
+  // 本地有、从未同步过（无 cloudId）的老作品 → 自动上传迁移
+  const g = loadGallery();
+  const rdb = getRdb();
   for (const li of g){
-    if (seen[li.id] || li.cloudId) continue;
+    if (li.cloudId != null) continue;
     try{
-      const r = await cbDb.collection('works').add({ owner: openid, localId: li.id, type: li.type, title: li.title, state: li.state, time: li.time });
-      li.cloudId = (r && (r.id || (r.data && r.data._id))) || null;
-      merged.push(li);
-      seen[li.id] = true;
-    }catch(e){ cbHint('部分本地作品上传失败：' + (e.message || e), true); }
+      const r = await rdb.from('gallery').insert({owner: uid, type: li.type, title: li.title, state: li.state, time: li.time});
+      const newId = r.data && r.data[0] && r.data[0].id;
+      if (newId != null) merged.push({ id: 'c' + newId, cloudId: newId, type: li.type, title: li.title, state: li.state, time: li.time });
+    }catch(e){}
   }
+  merged.sort(function(a,b){ return b.time - a.time; });
   storeGallery(merged);
-  renderGallery();
-  cbHint('云端同步完成，共 ' + merged.length + ' 条作品');
+  if ($('#view_gallery') && $('#view_gallery').classList.contains('active')) renderGallery();
 }
 /* 登录门禁 UI：未登录全屏拦截，已登录放行 */
 async function refreshCloudUI(){
@@ -1326,6 +1320,7 @@ async function refreshCloudUI(){
     cbSyncBar();
     if (box) box.style.display = 'none';
     cbHint('', false);
+    try{ await syncFromCloud(); }catch(e){}
     cbStartWatch();
   } else {
     gate.classList.add('show');
@@ -1455,22 +1450,24 @@ function saveToGallery(type){
     pushGalleryItem(item);
   }
 }
-function pushGalleryItem(item){
+async function pushGalleryItem(item){
   let g = loadGallery();
   g.unshift(item);
   if (g.length > GALLERY_MAX) g = g.slice(0, GALLERY_MAX);
   while (g.length > 1 && !storeGallery(g)){ g.pop(); }
   if (g.length === 1 && !storeGallery(g)){ alert('本机存储空间不足，无法存入作品库。'); return; }
-  // 已登录：同步写入云端
+  // 已登录：写入云端（PostgreSQL gallery 表），成功后以云端为准刷新
   if (isCloudReady()){
-    cbDb.collection('works').add({ localId: item.id, type: item.type, title: item.title, state: item.state, time: item.time })
-      .then(function(r){
-        item.cloudId = (r && (r.id || (r.data && r.data._id))) || null;
-        const gg = loadGallery();
-        gg.forEach(function(x){ if (x.id === item.id && !x.cloudId) x.cloudId = item.cloudId; });
-        storeGallery(gg);
-      })
-      .catch(function(e){ cbHint('云端保存失败：' + (e && e.message || e) + '（请确认已创建 works 集合）', true); });
+    try{
+      const rdb = getRdb();
+      const uid = await cbGetOpenid();
+      if (rdb && uid){
+        const r = await rdb.from('gallery').insert({owner: uid, type: item.type, title: item.title, state: item.state, time: item.time});
+        const newId = r.data && r.data[0] && r.data[0].id;
+        if (newId != null){ item.cloudId = newId; item.id = 'c' + newId; }
+        await syncFromCloud();
+      }
+    }catch(e){ cbHint('云端保存失败（本机已存）：' + (e && e.message || e), true); }
   }
   autoToast('已存入作品库');
   if ($('#view_gallery').classList.contains('active')) renderGallery();
@@ -1529,16 +1526,20 @@ function openGalleryItem(id){
   autoToast('已载入作品，可继续编辑');
 }
 /* 删除作品 */
-function delGalleryItem(id){
+async function delGalleryItem(id){
   if (!confirm('删除这条作品？删除后不可恢复。')) return;
   const old = loadGallery().filter(function(x){ return x.id === id; })[0];
+  // 已登录：同步删除云端（只删自己名下）
+  if (old && old.cloudId != null && isCloudReady()){
+    try{
+      const rdb = getRdb();
+      const uid = await cbGetOpenid();
+      if (rdb && uid) await rdb.from('gallery').delete().eq('owner', uid).eq('id', old.cloudId);
+    }catch(e){}
+  }
   const g = loadGallery().filter(function(x){ return x.id !== id; });
   storeGallery(g);
   renderGallery();
-  // 已登录：同步删除云端
-  if (old && old.cloudId && isCloudReady()){
-    cbDb.collection('works').doc(old.cloudId).remove().catch(function(){});
-  }
 }
 /* 事件：网格点击（委托） */
 $('#galleryGrid').addEventListener('click', function(e){
