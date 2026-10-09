@@ -560,7 +560,7 @@
   <div id="loginGate" class="login-gate">
     <div class="login-card">
       <div class="login-title">婚礼编辑器</div>
-      <div class="login-sub">登录后使用 · 作品保存在本机</div>
+      <div class="login-sub">登录后使用 · 作品云端保存</div>
       <div class="cloud-form" id="cbLoginBox">
         <input type="text" id="cbUsername" placeholder="用户名（不支持中文）" autocomplete="username">
         <div class="pw-wrap">
@@ -1142,6 +1142,9 @@ function cbNormPwd(s){
 }
 /* ===== 设备绑定 / 顶号 / 有效期（PostgreSQL 版，rdb 通道）===== */
 const MAX_BOUND_DEVICES = 2;
+/* 管理员账号（你自己三端用）：绑定设备数放宽到 5 台，客户账号保持 2 台 */
+const ADMIN_UIDS = { '2102631538752385025': true };
+function boundLimit(uid){ return ADMIN_UIDS[uid] ? 5 : MAX_BOUND_DEVICES; }
 const DEVICE_KEY = 'wd_dev_id';
 function getDeviceId(){
   try{
@@ -1169,8 +1172,9 @@ async function cbBindDevice(uid){
     }
     const all = await rdb.from('devices').select('id,last_active').eq('owner', uid).order('last_active');
     const list = all.data || [];
+    const limit = boundLimit(uid);
     const first = list.length === 0;
-    if (list.length < MAX_BOUND_DEVICES){
+    if (list.length < limit){
       await rdb.from('devices').insert({owner: uid, device_id: devId, bind_at: Date.now(), last_active: Date.now()});
       return {ok:true, first:first, kicked:false};
     }
