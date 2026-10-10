@@ -236,6 +236,42 @@
   .pw-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;padding:6px;margin:0;cursor:pointer;line-height:0;color:#9a8f80;border-radius:6px;}
   .pw-eye:hover{color:#2b2118;background:#f3efe7;}
   .pw-eye svg{width:17px;height:17px;display:block;pointer-events:none;}
+/* ===== 主持服务确认单卡片 ===== */
+.cfm-sheet{
+  width:100%;
+  background:#fff;
+  padding:38px 30px 30px;
+  font-family:'Noto Serif SC','Songti SC','SimSun',serif;
+  color:#2B211B;
+}
+.cfm-inner{ position:relative; }
+.cfm-inner::before{
+  content:""; position:absolute; inset:-12px;
+  border:1px solid #E7DCCB; pointer-events:none;
+}
+.cfm-brand{ text-align:center; letter-spacing:.5em; font-size:10px; color:#8F6F3F; margin-bottom:14px; }
+.cfm-title{ text-align:center; font-size:16px; font-weight:500; letter-spacing:.2em; color:#6B5D52; margin-bottom:4px; }
+.cfm-sub{ text-align:center; font-size:10px; color:#6B5D52; letter-spacing:.3em; margin-bottom:20px; }
+.cfm-divider{ display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:22px; }
+.cfm-divider .cfm-l{ width:48px; height:1px; background:#E7DCCB; }
+.cfm-divider .cfm-d{ width:4px; height:4px; background:#B08D57; transform:rotate(45deg); }
+.cfm-couple{ text-align:center; margin-bottom:22px; }
+.cfm-names{ font-size:22px; font-weight:600; letter-spacing:.08em; }
+.cfm-amp{ color:#B08D57; font-family:Georgia,serif; font-size:17px; margin:0 8px; }
+.cfm-date{ margin-top:8px; font-size:13px; letter-spacing:.12em; }
+.cfm-info{ border-top:1px solid #E7DCCB; margin-bottom:20px; }
+.cfm-row{ display:flex; justify-content:space-between; align-items:baseline; padding:9px 2px; border-bottom:1px solid #E7DCCB; font-size:12.5px; }
+.cfm-row .k{ color:#6B5D52; letter-spacing:.12em; flex:0 0 76px; }
+.cfm-row .v{ text-align:right; flex:1; padding-left:10px; line-height:1.5; }
+.cfm-price{ display:flex; gap:10px; margin-bottom:20px; }
+.cfm-price .cfm-box{ flex:1; border:1px solid #E7DCCB; padding:12px 8px; text-align:center; }
+.cfm-price .cfm-box .t{ font-size:10px; color:#6B5D52; letter-spacing:.2em; margin-bottom:5px; }
+.cfm-price .cfm-box .n{ font-size:18px; color:#8F6F3F; font-weight:600; font-family:Georgia,'Songti SC',serif; }
+.cfm-terms{ font-size:10.5px; line-height:1.85; color:#6B5D52; margin-bottom:18px; }
+.cfm-terms-t{ font-size:11px; color:#2B211B; letter-spacing:.2em; margin-bottom:6px; font-weight:600; }
+.cfm-terms p{ margin-bottom:4px; }
+.cfm-foot{ text-align:center; font-size:11px; letter-spacing:.08em; line-height:1.9; border-top:1px solid #E7DCCB; padding-top:14px; }
+.cfm-foot .cfm-reply{ display:block; margin-top:8px; font-size:10px; color:#6B5D52; letter-spacing:.2em; }
 </style>
 </head>
 <body>
@@ -268,6 +304,12 @@
           <div class="hc-kicker">WEDDING SCHEDULE</div>
           <div class="hc-title">婚礼时间安排</div>
           <div class="hc-desc">新娘方 · 新郎方 · 迎亲安排<br>时间轴排版 · 高清导出</div>
+        </a>
+        <a class="home-card" href="#/confirm">
+          <div class="hc-icon">确</div>
+          <div class="hc-kicker">HOSTING CONFIRMATION</div>
+          <div class="hc-title">主持服务确认单</div>
+          <div class="hc-desc">新人信息 · 价格定金<br>备注条款 · 高清导出</div>
         </a>
         <a class="home-card" href="#/gallery">
           <div class="hc-icon">库</div>
@@ -528,6 +570,131 @@
             <div class="sched-list" id="out_s3"></div>
           </div>
           <div class="sched-foot">WISHING YOU A PERFECT DAY</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- ===== 主持服务确认单编辑器 ===== -->
+  <div id="view_confirm" class="view">
+  <div class="backbar">
+    <a href="#/" id="backLinkConfirm">&larr; 返回选择</a>
+    <span><a href="#/gallery">作品库</a> · HOSTING CONFIRMATION</span>
+  </div>
+  <div class="wrap">
+    <div class="panel">
+      <h2>主持服务确认单</h2>
+      <p class="sub">编辑左侧内容，右侧实时预览；数据自动保存在本机浏览器</p>
+
+      <div class="sec-title">新人信息</div>
+      <div style="margin-bottom:10px;">
+        <label class="lbl"><b>新郎姓名</b></label>
+        <input type="text" id="inp_cGroom" value="" placeholder="如 马伟涛">
+      </div>
+      <div style="margin-bottom:10px;">
+        <label class="lbl"><b>新娘姓名</b></label>
+        <input type="text" id="inp_cBride" value="" placeholder="如 杨梦如">
+      </div>
+      <div style="margin-bottom:12px;">
+        <label class="lbl"><b>婚礼日期</b></label>
+        <input type="text" id="inp_cDate" value="" placeholder="如 2026年4月22日">
+      </div>
+
+      <div class="sec-title">服务信息</div>
+      <div style="margin-bottom:10px;">
+        <label class="lbl"><b>预定主持</b></label>
+        <input type="text" id="inp_cHost" value="">
+      </div>
+      <div style="margin-bottom:10px;">
+        <label class="lbl"><b>婚礼地点</b></label>
+        <input type="text" id="inp_cPlace" value="">
+      </div>
+      <div style="margin-bottom:10px;">
+        <label class="lbl"><b>预定档位</b></label>
+        <input type="text" id="inp_cTier" value="">
+      </div>
+      <div style="margin-bottom:12px;">
+        <label class="lbl"><b>确认日期</b></label>
+        <input type="text" id="inp_cSignDate" value="">
+      </div>
+
+      <div class="sec-title">价格</div>
+      <div style="margin-bottom:10px;">
+        <label class="lbl"><b>服务价格</b></label>
+        <input type="text" id="inp_cPrice" value="">
+      </div>
+      <div style="margin-bottom:12px;">
+        <label class="lbl"><b>已付定金</b></label>
+        <input type="text" id="inp_cDeposit" value="">
+      </div>
+
+      <div class="sec-title">备注条款（每行一条）</div>
+      <div style="margin-bottom:12px;">
+        <textarea id="inp_cTerms" rows="7">以上为新人婚宴酒店当地迎亲及婚宴酒店主持服务费用（包含主持人婚前沟通以及婚礼前一天彩排）。
+婚礼举行地为焦作地区以外的异地客户需要安排主持人住宿，以上费用为包含主持人往返路费的费用。
+服务余款客户应于婚礼结束后当天结清。
+如因客户单方面原因造成服务终止，定金不退。
+如因主持人单方面原因造成服务终止，定金返还并帮助新人联系主持人。
+如因不可抗力原因导致服务终止，双方协商解决。</textarea>
+      </div>
+
+      <div class="sec-title">底部文案</div>
+      <div style="margin-bottom:10px;">
+        <label class="lbl"><b>回执说明</b></label>
+        <input type="text" id="inp_cNote1" value="此信息为订金回执信息，请妥善保存记录。">
+      </div>
+      <div style="margin-bottom:10px;">
+        <label class="lbl"><b>祝福语</b></label>
+        <input type="text" id="inp_cNote2" value="感谢信任！提前祝新婚快乐！">
+      </div>
+      <div style="margin-bottom:12px;">
+        <label class="lbl"><b>确认提示</b></label>
+        <input type="text" id="inp_cNote3" value="以上无异议请回复确认">
+      </div>
+
+      <button class="btn-ghost" id="btn_saveGalleryConfirm">存入作品库</button>
+      <button class="btn" id="btn_exportConfirm">导出高清图片</button>
+    </div>
+
+    <div class="preview-box">
+      <h3>预览（导出即为下图）</h3>
+      <div class="preview-frame">
+        <div id="confirmCapture" class="cfm-sheet">
+          <div class="cfm-inner">
+            <div class="cfm-brand">YINGXIANG · WEDDING</div>
+            <div class="cfm-title">婚礼主持服务确认单</div>
+            <div class="cfm-sub">HOSTING CONFIRMATION</div>
+            <div class="cfm-divider"><span class="cfm-l"></span><span class="cfm-d"></span><span class="cfm-l"></span></div>
+
+            <div class="cfm-couple">
+              <div class="cfm-names"><span id="out_cGroom">新郎</span><span class="cfm-amp">&amp;</span><span id="out_cBride">新娘</span></div>
+              <div class="cfm-date" id="out_cDate">2026年1月1日</div>
+            </div>
+
+            <div class="cfm-info">
+              <div class="cfm-row"><span class="k">预定主持</span><span class="v" id="out_cHost"></span></div>
+              <div class="cfm-row"><span class="k">婚礼地点</span><span class="v" id="out_cPlace"></span></div>
+              <div class="cfm-row"><span class="k">预定档位</span><span class="v" id="out_cTier"></span></div>
+              <div class="cfm-row"><span class="k">确认日期</span><span class="v" id="out_cSignDate"></span></div>
+            </div>
+
+            <div class="cfm-price">
+              <div class="cfm-box"><div class="t">服务价格</div><div class="n" id="out_cPrice"></div></div>
+              <div class="cfm-box"><div class="t">已付定金</div><div class="n" id="out_cDeposit"></div></div>
+            </div>
+
+            <div class="cfm-terms">
+              <div class="cfm-terms-t">备 注</div>
+              <div id="out_cTerms"></div>
+            </div>
+
+            <div class="cfm-foot">
+              <div id="out_cNote1"></div>
+              <div id="out_cNote2"></div>
+              <div class="cfm-reply" id="out_cNote3"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1026,15 +1193,16 @@ render();
 let backTarget = 'home';   // 编辑器返回目标：home 或 gallery
 function updateBackLinks(){
   const t = backTarget === 'gallery' ? '#/gallery' : '#/';
-  const l1 = $('#backLinkRitual'), l2 = $('#backLinkSched');
+  const l1 = $('#backLinkRitual'), l2 = $('#backLinkSched'), l3 = $('#backLinkConfirm');
   if (l1) l1.href = t;
   if (l2) l2.href = t;
+  if (l3) l3.href = t;
 }
 document.querySelectorAll('.home-card').forEach(function(a){
   a.addEventListener('click', function(){ backTarget = 'home'; updateBackLinks(); });
 });
 function showView(name){
-  ['home','ritual','schedule','gallery'].forEach(function(v){
+  ['home','ritual','schedule','confirm','gallery'].forEach(function(v){
     const el = $('#view_' + v);
     if (el) el.classList.toggle('active', v === name);
   });
@@ -1043,7 +1211,7 @@ function showView(name){
 function route(){
   if (typeof cbSyncBar === 'function') cbSyncBar();
   const h = (location.hash || '#/').replace('#/', '') || 'home';
-  if (['home','ritual','schedule','gallery'].indexOf(h) === -1){ showView('home'); return; }
+  if (['home','ritual','schedule','confirm','gallery'].indexOf(h) === -1){ showView('home'); return; }
   showView(h);
   if (h === 'gallery') renderGallery();
 }
@@ -1436,6 +1604,14 @@ function collectSchedState(){
     size:$('#inp_schedSize').value
   };
 }
+function collectConfirmState(){
+  return {
+    groom:$('#inp_cGroom').value, bride:$('#inp_cBride').value, date:$('#inp_cDate').value,
+    host:$('#inp_cHost').value, place:$('#inp_cPlace').value, tier:$('#inp_cTier').value,
+    signDate:$('#inp_cSignDate').value, price:$('#inp_cPrice').value, deposit:$('#inp_cDeposit').value,
+    terms:$('#inp_cTerms').value, note1:$('#inp_cNote1').value, note2:$('#inp_cNote2').value, note3:$('#inp_cNote3').value
+  };
+}
 /* 存入作品库：导出成功或手动点"存入作品库"时调用 */
 function saveToGallery(type){
   const item = {
@@ -1443,8 +1619,10 @@ function saveToGallery(type){
     type: type,
     title: type === 'ritual'
       ? ('婚礼仪式流程 · ' + ($('#inp_name').value || '未命名'))
-      : ('婚礼时间流程表 · ' + ($('#inp_schedTitle').value || '未命名')),
-    state: type === 'ritual' ? collectRitualState(null) : collectSchedState(),
+      : (type === 'confirm'
+          ? ('主持确认单 · ' + (($('#inp_cGroom').value || '') + ' & ' + ($('#inp_cBride').value || '')).trim(' & ') || '未命名')
+          : ('婚礼时间流程表 · ' + ($('#inp_schedTitle').value || '未命名'))),
+    state: type === 'ritual' ? collectRitualState(null) : (type === 'confirm' ? collectConfirmState() : collectSchedState()),
     time: Date.now()
   };
   if (type === 'ritual' && rawPhoto){
@@ -1491,17 +1669,22 @@ function renderGallery(){
   if (empty) empty.style.display = 'none';
   grid.innerHTML = g.map(function(x){
     const isR = x.type === 'ritual';
+    const isC = x.type === 'confirm';
     const s = x.state || {};
-    const dateTxt = (s.date || '').trim();
+    const dateTxt = (s.date || s.signDate || '').trim();
     let inner = '<div class="gt-date">' + escHtml(dateTxt || '未填日期') + '</div>';
     if (isR){
       if (s.name) inner += '<div class="gt-line">' + escHtml(s.name) + '</div>';
       if (s.hotel) inner += '<div class="gt-line">' + escHtml(s.hotel) + '</div>';
+    } else if (isC){
+      if (s.groom || s.bride) inner += '<div class="gt-line">' + escHtml(((s.groom||'') + ' & ' + (s.bride||'')).trim(' & ')) + '</div>';
+      if (s.price) inner += '<div class="gt-line">' + escHtml(s.price) + '</div>';
     }
+    const typeTxt = isR ? '仪式流程' : (isC ? '主持确认单' : '时间流程表');
     return '<div class="g-item" data-id="' + escHtml(x.id) + '">'
       + '<button type="button" class="g-del" data-id="' + escHtml(x.id) + '" aria-label="删除">✕</button>'
       + '<div class="g-thumb">' + inner + '</div>'
-      + '<div class="g-info"><div class="g-type">' + (isR ? '仪式流程' : '时间流程表') + '</div><div class="g-time">' + fmtTime(x.time) + '</div></div>'
+      + '<div class="g-info"><div class="g-type">' + typeTxt + '</div><div class="g-time">' + fmtTime(x.time) + '</div></div>'
       + '</div>';
   }).join('');
 }
@@ -1519,6 +1702,12 @@ function openGalleryItem(id){
     restore(true);
     render();
     location.hash = '#/ritual';
+  } else if (item.type === 'confirm'){
+    try{ localStorage.setItem(CONFIRM_KEY, JSON.stringify(item.state)); }catch(e){}
+    showView('confirm');
+    restoreConfirm(true);
+    renderConfirm();
+    location.hash = '#/confirm';
   } else {
     try{ localStorage.setItem(SCHED_KEY, JSON.stringify(item.state)); }catch(e){}
     showView('schedule');
@@ -1708,6 +1897,119 @@ $('#btn_exportSched').addEventListener('click', async function(){
   btn.textContent = '导出高清图片';
   btn.disabled = false;
 });
+
+/* ===== 主持服务确认单编辑器 ===== */
+const CONFIRM_KEY = 'weddingConfirm_v1';
+function renderConfirm(){
+  $('#out_cGroom').textContent = $('#inp_cGroom').value || '新郎';
+  $('#out_cBride').textContent = $('#inp_cBride').value || '新娘';
+  $('#out_cDate').textContent = $('#inp_cDate').value || '待填写';
+  $('#out_cHost').textContent = $('#inp_cHost').value || '—';
+  $('#out_cPlace').textContent = $('#inp_cPlace').value || '—';
+  $('#out_cTier').textContent = $('#inp_cTier').value || '—';
+  $('#out_cSignDate').textContent = $('#inp_cSignDate').value || '—';
+  $('#out_cPrice').textContent = $('#inp_cPrice').value || '—';
+  $('#out_cDeposit').textContent = $('#inp_cDeposit').value || '—';
+  $('#out_cTerms').innerHTML = $('#inp_cTerms').value.split('\n').map(function(l){
+    return '<p>＊ ' + escHtml(l.trim()) + '</p>';
+  }).join('');
+  $('#out_cNote1').textContent = $('#inp_cNote1').value;
+  $('#out_cNote2').textContent = $('#inp_cNote2').value;
+  $('#out_cNote3').textContent = $('#inp_cNote3').value;
+}
+function saveConfirm(){
+  try{ localStorage.setItem(CONFIRM_KEY, JSON.stringify(collectConfirmState())); }catch(e){}
+}
+function restoreConfirm(keepMeta){
+  try{
+    const d = JSON.parse(localStorage.getItem(CONFIRM_KEY));
+    if (!d) return;
+    if (keepMeta){
+      if (d.groom != null) $('#inp_cGroom').value = d.groom;
+      if (d.bride != null) $('#inp_cBride').value = d.bride;
+      if (d.date != null) $('#inp_cDate').value = d.date;
+    } else {
+      $('#inp_cGroom').value = '';
+      $('#inp_cBride').value = '';
+      $('#inp_cDate').value = '';
+    }
+    if (d.host != null) $('#inp_cHost').value = d.host;
+    if (d.place != null) $('#inp_cPlace').value = d.place;
+    if (d.tier != null) $('#inp_cTier').value = d.tier;
+    if (d.signDate != null) $('#inp_cSignDate').value = d.signDate;
+    if (d.price != null) $('#inp_cPrice').value = d.price;
+    if (d.deposit != null) $('#inp_cDeposit').value = d.deposit;
+    if (d.terms != null) $('#inp_cTerms').value = d.terms;
+    if (d.note1 != null) $('#inp_cNote1').value = d.note1;
+    if (d.note2 != null) $('#inp_cNote2').value = d.note2;
+    if (d.note3 != null) $('#inp_cNote3').value = d.note3;
+  }catch(e){}
+}
+['inp_cGroom','inp_cBride','inp_cDate','inp_cHost','inp_cPlace','inp_cTier','inp_cSignDate','inp_cPrice','inp_cDeposit','inp_cTerms','inp_cNote1','inp_cNote2','inp_cNote3'].forEach(function(id){
+  $('#' + id).addEventListener('input', function(){ renderConfirm(); saveConfirm(); });
+});
+
+/* 确认单导出 */
+$('#btn_exportConfirm').addEventListener('click', async function(){
+  const btn = this;
+  btn.textContent = '生成中…'; btn.disabled = true;
+  try{
+    try{ if (document.fonts && document.fonts.ready) await document.fonts.ready; }catch(e){}
+    const canvas = await html2canvas($('#confirmCapture'), {useCORS:true, scale:4, backgroundColor:'#ffffff', logging:false});
+    const dataUrl = canvas.toDataURL('image/png');
+    saveToGallery('confirm');
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || navigator.maxTouchPoints > 0;
+    if (isMobile){
+      canvas.toBlob(async function(blob){
+        showPreview(dataUrl, true, blob || null, dataUrl);
+        if (!blob) return;
+        const httpUrl = await uploadTmp(blob);
+        const pv = window.__pv;
+        if (!pv || !pv.mask || !pv.mask.isConnected) return;
+        if (httpUrl && pv.img && pv.img.src.indexOf('http') !== 0){
+          pv.img.src = httpUrl;
+          if (pv.openBtn) pv.openBtn.href = httpUrl;
+          if (pv.tip) pv.tip.innerHTML = '<b style="font-size:16px;">长按上方图片</b><br>弹出菜单选择"存储图像"，即可保存到相册<br><span style="font-size:12px;opacity:.75;">网络图已就绪，长按即可保存</span>';
+        }
+      }, 'image/png');
+    } else {
+      try{
+        canvas.toBlob(function(blob){
+          if (blob && window.URL && URL.createObjectURL){
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = '主持服务确认单.png';
+            document.body.appendChild(a); a.click();
+            setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 3000);
+          }
+        }, 'image/png');
+      }catch(e){}
+      try{
+        const link = document.createElement('a');
+        link.download = '主持服务确认单.png'; link.href = dataUrl;
+        document.body.appendChild(link); link.click();
+        setTimeout(function(){ link.remove(); }, 1000);
+      }catch(e){}
+      setTimeout(function(){ showPreview(dataUrl, false, null, dataUrl); }, 350);
+    }
+  }catch(err){
+    alert('导出失败，请检查网络后重试。\n' + err.message);
+  }
+  btn.textContent = '导出高清图片'; btn.disabled = false;
+});
+$('#btn_saveGalleryConfirm').addEventListener('click', async function(){
+  const btn = this; btn.textContent = '保存中…';
+  try{
+    try{ if (document.fonts && document.fonts.ready) await document.fonts.ready; }catch(e){}
+    await html2canvas($('#confirmCapture'), {useCORS:true, scale:4, backgroundColor:'#ffffff', logging:false});
+    saveToGallery('confirm');
+  }catch(err){ alert('保存失败，请重试。'); }
+  btn.textContent = '存入作品库';
+});
+
+/* ---------- 启动 ---------- */
+restoreConfirm();
+renderConfirm();
 
 /* ===== 时间自动联动：早上迎亲 → 新郎方 / 新娘方 ===== */
 function shiftTime(t, offsetMin){
