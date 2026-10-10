@@ -1115,10 +1115,10 @@ async function cbDoLogout(){
   try{ await a.signOut(); }catch(e){}
 }
 async function cbGetOpenid(){
-  try{ const c = localStorage.getItem('wd_uid'); if (c) return c; }catch(e){}
+  // 以 CloudBase 当前登录态为准（不读 localStorage 缓存，防止换账号后用错 uid）
   const a = getAuth(); if (!a) return null;
-  try{ const ls = await a.getLoginState(); if (ls && ls.user) return ls.user.uid || ls.user.id || ls.user.openid || null; }catch(e){}
-  try{ if (a.currentUser) return a.currentUser.uid || a.currentUser.id || a.currentUser.openid || null; }catch(e){}
+  try{ const ls = await a.getLoginState(); if (ls && ls.user){ const u = ls.user.uid || ls.user.id || ls.user.openid; if (u) return u; } }catch(e){}
+  try{ if (a.currentUser){ const u = a.currentUser.uid || a.currentUser.id || a.currentUser.openid; if (u) return u; } }catch(e){}
   return null;
 }
 async function cbIsLogged(){
@@ -1216,6 +1216,7 @@ async function cbCheckExpiry(uid){
 async function cbHandleKicked(msg){
   if (window.__devCheckTimer){ clearInterval(window.__devCheckTimer); window.__devCheckTimer = null; }
   await cbDoLogout();
+  try{ localStorage.removeItem('wd_uid'); }catch(e){}
   cbUserName = '';
   const gate = $('#loginGate'); if (gate) gate.classList.add('show');
   const box = $('#cbLoginBox'); if (box) box.style.display = 'flex';
@@ -1374,6 +1375,7 @@ $('#btnCbLogin').addEventListener('click', async function(){
 $('#btnCbLogout').addEventListener('click', async function(){
   if (window.__devCheckTimer){ clearInterval(window.__devCheckTimer); window.__devCheckTimer = null; }
   await cbDoLogout();
+  try{ localStorage.removeItem('wd_uid'); }catch(e){}
   cbUserName = '';
   await refreshCloudUI();
   autoToast('已退出登录');
