@@ -641,6 +641,10 @@
 
       <div class="sec-title">底部文案</div>
       <div style="margin-bottom:10px;">
+        <label class="lbl"><b>顶部品牌英文</b><span class="val">留空则不显示</span></label>
+        <input type="text" id="inp_cBrand" value="WEDDING HOSTING CONFIRMATION">
+      </div>
+      <div style="margin-bottom:10px;">
         <label class="lbl"><b>回执说明</b></label>
         <input type="text" id="inp_cNote1" value="此信息为订金回执信息，请妥善保存记录。">
       </div>
@@ -662,7 +666,7 @@
       <div class="preview-frame">
         <div id="confirmCapture" class="cfm-sheet">
           <div class="cfm-inner">
-            <div class="cfm-brand">YINGXIANG · WEDDING</div>
+            <div class="cfm-brand" id="out_cBrand">WEDDING HOSTING CONFIRMATION</div>
             <div class="cfm-title">婚礼主持服务确认单</div>
             <div class="cfm-sub">HOSTING CONFIRMATION</div>
             <div class="cfm-divider"><span class="cfm-l"></span><span class="cfm-d"></span><span class="cfm-l"></span></div>
@@ -1606,6 +1610,7 @@ function collectSchedState(){
 }
 function collectConfirmState(){
   return {
+    brand:$('#inp_cBrand').value,
     groom:$('#inp_cGroom').value, bride:$('#inp_cBride').value, date:$('#inp_cDate').value,
     host:$('#inp_cHost').value, place:$('#inp_cPlace').value, tier:$('#inp_cTier').value,
     signDate:$('#inp_cSignDate').value, price:$('#inp_cPrice').value, deposit:$('#inp_cDeposit').value,
@@ -1901,6 +1906,9 @@ $('#btn_exportSched').addEventListener('click', async function(){
 /* ===== 主持服务确认单编辑器 ===== */
 const CONFIRM_KEY = 'weddingConfirm_v1';
 function renderConfirm(){
+  const brandTxt = $('#inp_cBrand').value.trim();
+  $('#out_cBrand').textContent = brandTxt;
+  $('#out_cBrand').style.display = brandTxt ? '' : 'none';
   $('#out_cGroom').textContent = $('#inp_cGroom').value || '新郎';
   $('#out_cBride').textContent = $('#inp_cBride').value || '新娘';
   $('#out_cDate').textContent = $('#inp_cDate').value || '待填写';
@@ -1924,6 +1932,7 @@ function restoreConfirm(keepMeta){
   try{
     const d = JSON.parse(localStorage.getItem(CONFIRM_KEY));
     if (!d) return;
+    if (d.brand != null) $('#inp_cBrand').value = d.brand;
     if (keepMeta){
       if (d.groom != null) $('#inp_cGroom').value = d.groom;
       if (d.bride != null) $('#inp_cBride').value = d.bride;
@@ -1945,7 +1954,7 @@ function restoreConfirm(keepMeta){
     if (d.note3 != null) $('#inp_cNote3').value = d.note3;
   }catch(e){}
 }
-['inp_cGroom','inp_cBride','inp_cDate','inp_cHost','inp_cPlace','inp_cTier','inp_cSignDate','inp_cPrice','inp_cDeposit','inp_cTerms','inp_cNote1','inp_cNote2','inp_cNote3'].forEach(function(id){
+['inp_cBrand','inp_cGroom','inp_cBride','inp_cDate','inp_cHost','inp_cPlace','inp_cTier','inp_cSignDate','inp_cPrice','inp_cDeposit','inp_cTerms','inp_cNote1','inp_cNote2','inp_cNote3'].forEach(function(id){
   $('#' + id).addEventListener('input', function(){ renderConfirm(); saveConfirm(); });
 });
 
