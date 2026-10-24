@@ -131,10 +131,10 @@
   .cinfo#out_hotel{font-size:9.5px;}
 
   .mid{position:relative;margin-top:28px;}
-  /* 左侧照片：黑色线框，框顶高于右侧标题，框底精确对齐备注末行；照片填满整个黑框，可拖动调整显示位置 */
-  .photo{position:absolute;left:0;top:-16px;bottom:0;width:128px;}
+  /* 左侧照片：框顶高于右侧标题；照片填满整个黑框，可拖动调整显示位置；框高较原版整体调低约10% */
+  .photo{position:absolute;left:0;top:-16px;bottom:10%;width:128px;}
   .photo .ph-wrap{
-    width:128px;height:100%;border:1px solid #111;overflow:hidden;background:#fff;
+    width:128px;height:100%;border:1px solid transparent;overflow:hidden;background:#fff;
     display:flex;flex-direction:column;justify-content:flex-end;
   }
   /* 照片层：可拖动照片（电脑鼠标 + 手机触屏）；img 按原图分辨率渲染，导出清晰 */
