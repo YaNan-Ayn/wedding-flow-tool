@@ -131,8 +131,8 @@
   .cinfo#out_hotel{font-size:9.5px;}
 
   .mid{position:relative;margin-top:28px;}
-  /* 左侧照片：框顶高于右侧标题；照片填满整个黑框，可拖动调整显示位置；框高较原版整体调低约10% */
-  .photo{position:absolute;left:0;top:-16px;bottom:10%;width:128px;}
+  /* 左侧照片：框底与右侧备注末行对齐（bottom:0 不动）；框顶整体下移约10%使框变矮；照片填满黑框可拖动；黑线透明 */
+  .photo{position:absolute;left:0;top:calc(-16px + 10%);bottom:0;width:128px;}
   .photo .ph-wrap{
     width:128px;height:100%;border:1px solid transparent;overflow:hidden;background:#fff;
     display:flex;flex-direction:column;justify-content:flex-end;
