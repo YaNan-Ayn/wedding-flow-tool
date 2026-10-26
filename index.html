@@ -1226,7 +1226,7 @@ function route(){
 
 /* ===== 作品库 ===== */
 const GALLERY_KEY = 'weddingGallery_v1';
-const GALLERY_MAX = 30;
+const GALLERY_MAX = 15;
 
 /* ===== CloudBase 云端同步（登录 + 作品库跨设备） =====
    环境 ID 获取：默认使用 wedding-tool-d2gowbdg8045b527c；访问地址加 ?env=你的环境ID 可覆盖并自动记住
@@ -1453,6 +1453,7 @@ async function syncFromCloud(){
     }catch(e){}
   }
   merged.sort(function(a,b){ return b.time - a.time; });
+  if (merged.length > GALLERY_MAX) merged = merged.slice(0, GALLERY_MAX);
   storeGallery(merged);
   if ($('#view_gallery') && $('#view_gallery').classList.contains('active')) renderGallery();
 }
@@ -1569,6 +1570,26 @@ function storeGallery(g){
     return true;
   }catch(e){ return false; }
 }
+/* 本机空间不足时自动清理最早的本地作品（云端备份不受影响） */
+function trimLocalGallery(){
+  try{
+    const g = loadGallery();
+    if (!g.length) return 0;
+    let s = JSON.stringify(g);
+    const LIMIT = 4 * 1024 * 1024;
+    if (s.length <= LIMIT) return 0;
+    let removed = 0;
+    while (g.length > 0 && s.length > LIMIT){
+      g.pop(); removed++;
+      s = JSON.stringify(g);
+    }
+    if (removed > 0){
+      storeGallery(g);
+      if (typeof autoToast === 'function') autoToast('本机空间不足，已自动保留最近 ' + g.length + ' 个作品');
+    }
+    return removed;
+  }catch(e){ return 0; }
+}
 function escHtml(s){
   return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
@@ -1584,13 +1605,13 @@ function compressPhoto(dataUrl, cb){
   const img = new Image();
   img.onload = function(){
     try{
-      const mw = 960;
+      const mw = 640;
       const w = Math.min(img.naturalWidth, mw);
       const h = Math.round(img.naturalHeight * w / img.naturalWidth);
       const c = document.createElement('canvas');
       c.width = w; c.height = h;
       c.getContext('2d').drawImage(img, 0, 0, w, h);
-      cb(c.toDataURL('image/jpeg', 0.8));
+      cb(c.toDataURL('image/jpeg', 0.75));
     }catch(e){ cb(dataUrl); }
   };
   img.onerror = function(){ cb(dataUrl); };
@@ -1648,7 +1669,7 @@ async function pushGalleryItem(item){
   g.unshift(item);
   if (g.length > GALLERY_MAX) g = g.slice(0, GALLERY_MAX);
   while (g.length > 1 && !storeGallery(g)){ g.pop(); }
-  if (g.length === 1 && !storeGallery(g)){ alert('本机存储空间不足，无法存入作品库。'); return; }
+  if (g.length === 1 && !storeGallery(g)){ alert('本机存储空间不足，无法存入作品库。\n请删除部分旧作品，或清除浏览器缓存后重试。'); return; }
   // 已登录：写入云端（PostgreSQL gallery 表），成功后以云端为准刷新
   if (isCloudReady()){
     try{
@@ -1667,6 +1688,7 @@ async function pushGalleryItem(item){
 }
 /* 作品库网格：小方块文字卡片（仪式=日期/新人/酒店，时间表=日期） */
 function renderGallery(){
+  trimLocalGallery();
   const grid = $('#galleryGrid'), empty = $('#galleryEmpty');
   if (!grid) return;
   const g = loadGallery();
@@ -2104,6 +2126,7 @@ function autoSyncSched(){
 }
 
 /* ---------- 启动 ---------- */
+trimLocalGallery();
 restoreSched();
 renderSched();
 var schedAnchor = readAnchorTimes();
