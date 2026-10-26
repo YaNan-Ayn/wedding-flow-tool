@@ -120,7 +120,7 @@
   @media(min-width:1024px){.preview-box>h3{text-align:left;}}
   .preview-frame{background:#e7e2da;border-radius:14px;padding:26px 16px;overflow:auto;display:flex;justify-content:center;}
   .card{
-    width:420px;min-height:690px;background:#ffffff;padding:30px 34px 18px;position:relative;
+    width:420px;min-height:690px;background:#F5EFE7;padding:30px 34px 18px;position:relative;
     box-shadow:0 14px 40px rgba(0,0,0,.12);flex-shrink:0;
     font-family:'Noto Serif SC','Songti SC','SimSun',serif;
   }
@@ -1105,7 +1105,7 @@ $('#btn_export').addEventListener('click', async function(){
   btn.disabled = true;
   try{
     const canvas = await html2canvas($('#captureDom'), {
-      useCORS:true, scale:4, backgroundColor:'#ffffff', logging:false
+      useCORS:true, scale:4, backgroundColor:'#F5EFE7', logging:false
     });
     const dataUrl = canvas.toDataURL('image/png');
     saveToGallery('ritual');
@@ -1759,7 +1759,7 @@ $('#btn_saveGalleryRitual').addEventListener('click', async function(){
   btn.textContent = '保存中…';
   try{
     try{ if (document.fonts && document.fonts.ready) await document.fonts.ready; }catch(e){}
-    const canvas = await html2canvas($('#captureDom'), {useCORS:true, scale:4, backgroundColor:'#ffffff', logging:false});
+    const canvas = await html2canvas($('#captureDom'), {useCORS:true, scale:4, backgroundColor:'#F5EFE7', logging:false});
     saveToGallery('ritual');
   }catch(err){
     alert('保存失败，请重试。');
@@ -2099,8 +2099,37 @@ function autoSyncSched(){
   }
 }
 
+/* ---------- 导出卡片背景：浅杏色棉宣纸纹理（无缝平铺、若隐若现） ---------- */
+function applyPaperTexture(){
+  const el = $('#captureDom');
+  if (!el) return;
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256">'
+    + '<filter id="paper" x="0" y="0" width="100%" height="100%">'
+    + '<feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="3" stitchTiles="stitch" seed="7" result="n"/>'
+    + '<feColorMatrix in="n" type="matrix" values="0 0 0 0 0.941  0 0 0 0 0.918  0 0 0 0 0.878  0 0 0 0.11 0"/>'
+    + '</filter>'
+    + '<rect width="256" height="256" filter="url(#paper)"/>'
+    + '</svg>';
+  const img = new Image();
+  img.onload = function(){
+    try{
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 256;
+      c.getContext('2d').drawImage(img, 0, 0, 256, 256);
+      const png = c.toDataURL('image/png');
+      el.style.backgroundColor = '#F5EFE7';
+      el.style.backgroundImage = 'url(' + png + ')';
+      el.style.backgroundSize = '256px 256px';
+      el.style.backgroundRepeat = 'repeat';
+    }catch(e){}
+  };
+  img.onerror = function(){};
+  img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+}
+
 /* ---------- 启动 ---------- */
 restoreSched();
+applyPaperTexture();
 renderSched();
 var schedAnchor = readAnchorTimes();
 var lastT1 = schedAnchor[0], lastT2 = schedAnchor[1];
