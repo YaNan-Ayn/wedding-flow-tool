@@ -171,7 +171,9 @@
   }
   .btn-ghost:hover{border-color:#111;background:#faf8f2;}
   .gallery-wrap{max-width:1060px;margin:0 auto;padding:24px 16px 60px;}
-  .gallery-head{background:#fff;border-radius:14px;padding:24px 26px;box-shadow:0 6px 20px rgba(0,0,0,.06);margin-bottom:20px;}
+  .gallery-head{position:relative;background:#fff;border-radius:14px;padding:24px 26px;box-shadow:0 6px 20px rgba(0,0,0,.06);margin-bottom:20px;}
+  .btn-clean{position:absolute;top:22px;right:24px;background:#fff;color:#8a6d3b;border:1px solid #E7DCCB;border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer;}
+  .btn-clean:hover{background:#faf6ef;}
   .gallery-head h2{font-size:20px;font-weight:600;letter-spacing:2px;}
   .gallery-head .sub{font-size:12.5px;color:#8a8a8a;margin-top:6px;line-height:1.7;}
   .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:14px;}
@@ -718,6 +720,7 @@
   <div class="gallery-wrap">
     <div class="gallery-head">
       <h2>作品库</h2>
+      <button type="button" class="btn-clean" id="btnCleanLocal">清理本机缓存</button>
       <p class="sub">导出图片或点"存入作品库"后，作品会自动保存在这里。点击任一作品可回到编辑器继续编辑。</p>
     </div>
     <div class="gallery-grid" id="galleryGrid"></div>
@@ -756,6 +759,7 @@ const SAVE_KEY = 'weddingFlowEditor_v3';
 
 /* ---------- 状态 ---------- */
 let rawPhoto = null;          // 原始照片 dataURL（未加滤镜）
+let photoCache = null;      // 草稿保存用的压缩照片（避免原图撑爆本机存储）
 let dragging = false, sx = 0, sy = 0, posX = 50, posY = 50;
 let imgW = 0, imgH = 0;       // cover 放大后的照片尺寸（px）
 
@@ -884,7 +888,7 @@ function save(){
     flow:$('#inp_flow').value, foot:$('#inp_foot').value, slogan:$('#inp_slogan').value,
     sloganEn:$('#inp_sloganEn').value, font:$('#inp_font').value, size:$('#inp_size').value,
     opacity:$('#inp_opacity').value, bw:$('#inp_bw').checked,
-    px:posX, py:posY, photo:rawPhoto
+    px:posX, py:posY, photo:(photoCache || rawPhoto)
   };
   try{ localStorage.setItem(SAVE_KEY, JSON.stringify(data)); }catch(e){}
 }
@@ -1186,8 +1190,10 @@ $('#inp_photo').addEventListener('change', function(e){
   const rd = new FileReader();
   rd.onload = function(ev){
     rawPhoto = ev.target.result;
+    photoCache = null;   // 新照片，先清压缩缓存
     posX = 50; posY = 50;   // 新照片默认居中
     applyPhoto();
+    refreshPhotoCache();
   };
   rd.readAsDataURL(f);
   e.target.value = '';
@@ -1570,6 +1576,11 @@ function storeGallery(g){
     return true;
   }catch(e){ return false; }
 }
+/* 压缩缓存：原图异步压缩后用于草稿保存 */
+function refreshPhotoCache(){
+  if (!rawPhoto){ photoCache = null; return; }
+  compressPhoto(rawPhoto, function(p){ photoCache = p; save(); });
+}
 /* 本机空间不足时自动清理最早的本地作品（云端备份不受影响） */
 function trimLocalGallery(){
   try{
@@ -1589,6 +1600,22 @@ function trimLocalGallery(){
     }
     return removed;
   }catch(e){ return 0; }
+}
+/* 启动瘦身：压缩存量超大草稿照片 + 作品库瘦身 */
+function trimLocalData(){
+  try{
+    const d = JSON.parse(localStorage.getItem(SAVE_KEY));
+    if (d && d.photo && typeof d.photo === 'string' && d.photo.length > 700000){
+      const oldPhoto = d.photo;
+      compressPhoto(oldPhoto, function(p){
+        try{
+          const cur = JSON.parse(localStorage.getItem(SAVE_KEY));
+          if (cur && cur.photo === oldPhoto){ cur.photo = p; localStorage.setItem(SAVE_KEY, JSON.stringify(cur)); }
+        }catch(e){}
+      });
+    }
+  }catch(e){}
+  trimLocalGallery();
 }
 function escHtml(s){
   return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
@@ -1767,6 +1794,23 @@ async function delGalleryItem(id){
   storeGallery(g);
   renderGallery();
 }
+/* 一键清理本机缓存（云端备份不受影响，清后自动从云端拉回） */
+$('#btnCleanLocal').addEventListener('click', async function(){
+  if (!confirm('将清除本机缓存的草稿与作品，云端备份不受影响，清除后会自动从云端恢复作品。继续？')) return;
+  try{ localStorage.removeItem(GALLERY_KEY); }catch(e){}
+  try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+  try{ localStorage.removeItem(SCHED_KEY); }catch(e){}
+  try{ localStorage.removeItem(CONFIRM_KEY); }catch(e){}
+  if (isCloudReady()){
+    try{ await syncFromCloud(); }catch(e){}
+    try{ renderGallery(); }catch(e){}
+    autoToast('已清理本机缓存，作品已从云端恢复');
+  } else {
+    renderGallery();
+    autoToast('已清理本机缓存');
+  }
+});
+
 /* 事件：网格点击（委托） */
 $('#galleryGrid').addEventListener('click', function(e){
   const del = e.target.closest('.g-del');
@@ -2126,7 +2170,7 @@ function autoSyncSched(){
 }
 
 /* ---------- 启动 ---------- */
-trimLocalGallery();
+trimLocalData();
 restoreSched();
 renderSched();
 var schedAnchor = readAnchorTimes();
