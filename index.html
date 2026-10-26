@@ -1232,7 +1232,7 @@ function route(){
 
 /* ===== 作品库 ===== */
 const GALLERY_KEY = 'weddingGallery_v1';
-const GALLERY_MAX = 15;
+const GALLERY_MAX = 30;
 
 /* ===== CloudBase 云端同步（登录 + 作品库跨设备） =====
    环境 ID 获取：默认使用 wedding-tool-d2gowbdg8045b527c；访问地址加 ?env=你的环境ID 可覆盖并自动记住
@@ -1587,7 +1587,7 @@ function trimLocalGallery(){
     const g = loadGallery();
     if (!g.length) return 0;
     let s = JSON.stringify(g);
-    const LIMIT = 4 * 1024 * 1024;
+    const LIMIT = 5.5 * 1024 * 1024;
     if (s.length <= LIMIT) return 0;
     let removed = 0;
     while (g.length > 0 && s.length > LIMIT){
