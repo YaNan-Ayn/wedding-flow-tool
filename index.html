@@ -919,6 +919,27 @@ function restore(keepMeta){
   }catch(e){}
 }
 
+/* 重置仪式流程编辑器为初始空白模板（不含上一场内容与照片） */
+function resetRitualEditor(){
+  try{
+    ['inp_name','inp_hotel','inp_date','inp_flow','inp_foot','inp_slogan','inp_sloganEn','inp_font','inp_size','inp_opacity'].forEach(function(id){
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.value = (el.defaultValue != null) ? el.defaultValue : '';
+    });
+    const bw = document.getElementById('inp_bw');
+    if (bw) bw.checked = false;
+    rawPhoto = null; photoCache = null;
+    imgW = 0; imgH = 0;
+    posX = 50; posY = 50;
+    const pi = document.getElementById('photoImg');
+    if (pi){ pi.removeAttribute('src'); pi.style.display = 'none'; }
+    const pp = document.getElementById('photoPh');
+    if (pp) pp.style.display = 'flex';
+    if (typeof render === 'function') render();
+  }catch(e){}
+}
+
 /* ---------- 导出 ---------- */
 /* 多图床并行上传（60分钟内有效），使微信/手机浏览器可长按保存或转发图片；全部失败返回 null */
 async function uploadTmp(blob){
@@ -1200,7 +1221,6 @@ $('#inp_photo').addEventListener('change', function(e){
 });
 
 /* ---------- 启动 ---------- */
-restore();
 render();
 
 /* ===== 视图路由 ===== */
@@ -1216,6 +1236,7 @@ document.querySelectorAll('.home-card').forEach(function(a){
   a.addEventListener('click', function(){ backTarget = 'home'; updateBackLinks(); });
 });
 function showView(name){
+  if (name === 'ritual' && typeof resetRitualEditor === 'function') resetRitualEditor();
   ['home','ritual','schedule','confirm','gallery'].forEach(function(v){
     const el = $('#view_' + v);
     if (el) el.classList.toggle('active', v === name);
