@@ -1783,7 +1783,7 @@ function openGalleryItem(id){
     showView('ritual');
     restore(true);
     render();
-    location.hash = '#/ritual';
+    history.replaceState(null, '', '#/ritual');
   } else if (item.type === 'confirm'){
     try{ localStorage.setItem(CONFIRM_KEY, JSON.stringify(item.state)); }catch(e){}
     showView('confirm');
