@@ -1382,7 +1382,7 @@ function cbNormPwd(s){
 /* ===== 设备绑定 / 顶号 / 有效期（PostgreSQL 版，rdb 通道）===== */
 const MAX_BOUND_DEVICES = 2;
 /* 管理员账号（你自己三端用）：绑定设备数放宽到 5 台，客户账号保持 2 台 */
-const ADMIN_UIDS = { '2102631538752385025': true };
+const ADMIN_UIDS = { '2102631538752385025': true, '2116833540255600641': true };
 function boundLimit(uid){ return ADMIN_UIDS[uid] ? 5 : MAX_BOUND_DEVICES; }
 const DEVICE_KEY = 'wd_dev_id';
 function getDeviceId(){
