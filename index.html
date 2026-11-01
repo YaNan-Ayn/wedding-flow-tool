@@ -197,13 +197,14 @@
     .g-type{font-size:9px;}
     .g-time{font-size:9.5px;margin-top:2px;}}
   .g-del{
-    position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;border:none;cursor:pointer;
-    background:rgba(17,17,17,.66);color:#fff;font-size:13px;line-height:1;z-index:2;
+    position:absolute;top:6px;right:6px;width:40px;height:40px;border-radius:50%;border:none;cursor:pointer;
+    background:rgba(17,17,17,.66);color:#fff;font-size:17px;line-height:1;z-index:2;
     display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s,background .15s;
   }
   .g-item:hover .g-del{opacity:1;}
   .g-del:hover{background:rgba(200,40,40,.9);}
   @media(max-width:560px){.g-del{opacity:1;background:rgba(17,17,17,.55);}}
+  @media (hover:none){.g-del{opacity:1;background:rgba(17,17,17,.55);}}
   .gallery-empty{
     display:none;background:#fff;border-radius:14px;padding:60px 24px;text-align:center;
     color:#a09a90;font-size:14px;line-height:2;box-shadow:0 6px 20px rgba(0,0,0,.06);
@@ -1835,8 +1836,36 @@ function openGalleryItem(id){
   autoToast('已载入作品，可继续编辑');
 }
 /* 删除作品 */
+/* 自绘确认弹层（不依赖浏览器 confirm，手机端也能正常弹出） */
+function confirmDialog(msg){
+  return new Promise(function(resolve){
+    const mask = document.createElement('div');
+    mask.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;';
+    const box = document.createElement('div');
+    box.style.cssText = 'background:#fff;border-radius:14px;padding:22px 20px;width:min(320px,86%);text-align:center;font-family:inherit;box-sizing:border-box;';
+    const txt = document.createElement('div');
+    txt.textContent = msg;
+    txt.style.cssText = 'font-size:15px;color:#222;line-height:1.6;margin-bottom:18px;white-space:pre-line;';
+    const btns = document.createElement('div');
+    btns.style.cssText = 'display:flex;gap:10px;';
+    const btnNo = document.createElement('button');
+    btnNo.textContent = '取消';
+    btnNo.style.cssText = 'flex:1;padding:11px 0;border:1px solid #ddd;background:#fff;border-radius:10px;font-size:15px;color:#555;cursor:pointer;';
+    const btnYes = document.createElement('button');
+    btnYes.textContent = '确认删除';
+    btnYes.style.cssText = 'flex:1;padding:11px 0;border:none;background:#c23232;color:#fff;border-radius:10px;font-size:15px;cursor:pointer;';
+    btns.appendChild(btnNo); btns.appendChild(btnYes);
+    box.appendChild(txt); box.appendChild(btns);
+    mask.appendChild(box);
+    document.body.appendChild(mask);
+    function done(v){ try{ document.body.removeChild(mask); }catch(e){} resolve(v); }
+    btnNo.addEventListener('click', function(){ done(false); });
+    btnYes.addEventListener('click', function(){ done(true); });
+    mask.addEventListener('click', function(e){ if (e.target === mask) done(false); });
+  });
+}
 async function delGalleryItem(id){
-  if (!confirm('删除这条作品？删除后不可恢复。')) return;
+  if (!(await confirmDialog('删除这条作品？删除后不可恢复。'))) return;
   const old = loadGallery().filter(function(x){ return x.id === id; })[0];
   // 已登录：同步删除云端（只删自己名下）
   if (old && old.cloudId != null && isCloudReady()){
