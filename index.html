@@ -128,6 +128,7 @@
     box-shadow:0 14px 40px rgba(0,0,0,.12);flex-shrink:0;
     font-family:'Noto Serif SC','Songti SC','SimSun',serif;
   }
+  .card.bg-white{background-color:#FFFFFF;background-image:none;}
   .topright{text-align:right;letter-spacing:2px;}
   .en-kicker{font-size:7px;color:#9a9a9a;line-height:1.5;letter-spacing:4px;font-weight:700;}
   .cname{font-size:19px;font-weight:600;color:#141414;margin-top:10px;letter-spacing:1px;}
@@ -413,6 +414,11 @@
     <div>
       <label class="lbl"><b>透明度（流程文字）</b><span class="val" id="val_opacity">100%</span></label>
       <input type="range" id="inp_opacity" min="30" max="100" value="90">
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="lbl"><b>导出底图</b></label>
+      <label class="row"><input type="radio" name="bgStyle" id="bg_white" value="white"> 白底</label>
+      <label class="row"><input type="radio" name="bgStyle" id="bg_paper" value="paper"> 纸纹底图</label>
     </div>
 
     <div class="sec-title">左侧照片</div>
@@ -889,6 +895,24 @@ photoImg.addEventListener('dblclick', function(){
 });
 
 /* ---------- 自动保存 / 恢复 ---------- */
+const BG_STYLE_KEY = 'wd_bg_style';
+function getBgStyle(){ try{ return localStorage.getItem(BG_STYLE_KEY) || 'paper'; }catch(e){ return 'paper'; } }
+function applyBgStyle(){
+  try{
+    const st = getBgStyle();
+    const w = document.getElementById('bg_white'), p = document.getElementById('bg_paper');
+    if (w) w.checked = (st === 'white');
+    if (p) p.checked = (st !== 'white');
+    const card = document.getElementById('captureDom');
+    if (card) card.classList.toggle('bg-white', st === 'white');
+  }catch(e){}
+}
+(function(){
+  const w = document.getElementById('bg_white'), p = document.getElementById('bg_paper');
+  if (!w || !p) return;
+  w.addEventListener('change', function(){ if (this.checked){ try{ localStorage.setItem(BG_STYLE_KEY, 'white'); }catch(e){} applyBgStyle(); } });
+  p.addEventListener('change', function(){ if (this.checked){ try{ localStorage.setItem(BG_STYLE_KEY, 'paper'); }catch(e){} applyBgStyle(); } });
+})();
 function save(){
   const data = {
     name:$('#inp_name').value, hotel:$('#inp_hotel').value, date:$('#inp_date').value, memo:$('#inp_memo').value,
@@ -1142,7 +1166,7 @@ $('#btn_export').addEventListener('click', async function(){
   btn.disabled = true;
   try{
     const canvas = await html2canvas($('#captureDom'), {
-      useCORS:true, scale:4, backgroundColor:'#EEEBE6', logging:false
+      useCORS:true, scale:4, backgroundColor:(getBgStyle() === 'white' ? '#FFFFFF' : '#EEEBE6'), logging:false
     });
     const dataUrl = canvas.toDataURL('image/png');
     saveToGallery('ritual');
@@ -1858,7 +1882,7 @@ $('#btn_saveGalleryRitual').addEventListener('click', async function(){
   btn.textContent = '保存中…';
   try{
     try{ if (document.fonts && document.fonts.ready) await document.fonts.ready; }catch(e){}
-    const canvas = await html2canvas($('#captureDom'), {useCORS:true, scale:4, backgroundColor:'#EEEBE6', logging:false});
+    const canvas = await html2canvas($('#captureDom'), {useCORS:true, scale:4, backgroundColor:(getBgStyle() === 'white' ? '#FFFFFF' : '#EEEBE6'), logging:false});
     saveToGallery('ritual');
   }catch(err){
     alert('保存失败，请重试。');
@@ -2199,6 +2223,7 @@ function autoSyncSched(){
 }
 
 /* ---------- 启动 ---------- */
+applyBgStyle();
 trimLocalData();
 restoreSched();
 renderSched();
