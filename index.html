@@ -116,6 +116,9 @@
 
   /* ===== 预览卡片（导出即为下图） ===== */
   .preview-box{flex:1;min-width:0;}
+  @media(min-width:1024px){
+    .preview-box{position:sticky;align-self:flex-start;}
+  }
   .preview-box>h3{font-size:16px;font-weight:600;margin-bottom:12px;text-align:center;}
   @media(min-width:1024px){.preview-box>h3{text-align:left;}}
   .preview-frame{background:#e7e2da;border-radius:14px;padding:26px 16px;overflow:auto;display:flex;justify-content:center;}
@@ -820,6 +823,7 @@ function render(){
   $('#out_foot').style.opacity = op;
   $('#val_size').textContent = fs + 'px';
   $('#val_opacity').textContent = Math.round(op * 100) + '%';
+  if (typeof stickPreviewCenter === 'function') stickPreviewCenter();
 }
 
 /* ---------- 照片：黑白滤镜（Canvas 灰度处理，导出效果一致） ---------- */
@@ -895,6 +899,17 @@ photoImg.addEventListener('dblclick', function(){
 });
 
 /* ---------- 自动保存 / 恢复 ---------- */
+/* 电脑端右侧预览垂直居中吸顶：左侧滚动时预览始终停在屏幕中央 */
+function stickPreviewCenter(){
+  try{
+    const pb = document.querySelector('.preview-box');
+    if (!pb) return;
+    if (window.innerWidth < 1024) return;
+    const h = pb.offsetHeight;
+    const top = Math.max(10, Math.round((window.innerHeight - h) / 2));
+    pb.style.top = top + 'px';
+  }catch(e){}
+}
 const BG_STYLE_KEY = 'wd_bg_style';
 function getBgStyle(){ try{ return localStorage.getItem(BG_STYLE_KEY) || 'paper'; }catch(e){ return 'paper'; } }
 function applyBgStyle(){
@@ -2224,7 +2239,9 @@ function autoSyncSched(){
 
 /* ---------- 启动 ---------- */
 applyBgStyle();
+stickPreviewCenter();
 trimLocalData();
+window.addEventListener('resize', stickPreviewCenter);
 restoreSched();
 renderSched();
 var schedAnchor = readAnchorTimes();
