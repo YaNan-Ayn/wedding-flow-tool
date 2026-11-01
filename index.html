@@ -131,7 +131,17 @@
     box-shadow:0 14px 40px rgba(0,0,0,.12);flex-shrink:0;
     font-family:'Noto Serif SC','Songti SC','SimSun',serif;
   }
-  .card.bg-white{background-color:#FFFFFF;background-image:none;}
+    .card.bg-white{background-color:#FFFFFF;background-image:none;}
+  .card.bg-ivory{background-color:#F7F3EA;background-image:none;}
+  .card.bg-blush{background-color:#F8EFEC;background-image:none;}
+  .card.bg-champagne{background-color:#F6EBD7;background-image:none;}
+  .card.bg-mist{background-color:#EEF3F4;background-image:none;}
+  .card.bg-mistTeal{background-color:#E6EFEC;background-image:none;}
+  .card.bg-stone{background-color:#F4F3F0;background-image:none;}
+  .bg-swatches{display:flex;gap:8px;margin-top:10px;}
+  .swatch{flex:1 1 0;max-width:52px;height:34px;border-radius:7px;border:2px solid rgba(0,0,0,.10);cursor:pointer;box-sizing:border-box;background-size:cover;background-position:center;}
+  .swatch.sel{border-color:#c9a26b;box-shadow:0 0 0 2px rgba(201,162,107,.55);}
+  .swatch:hover{border-color:#b8b0a0;}
   .topright{text-align:right;letter-spacing:2px;}
   .en-kicker{font-size:7px;color:#9a9a9a;line-height:1.5;letter-spacing:4px;font-weight:700;}
   .cname{font-size:19px;font-weight:600;color:#141414;margin-top:10px;letter-spacing:1px;}
@@ -423,6 +433,7 @@
       <label class="lbl"><b>导出底图</b></label>
       <label class="row"><input type="radio" name="bgStyle" id="bg_white" value="white"> 白底</label>
       <label class="row"><input type="radio" name="bgStyle" id="bg_paper" value="paper"> 纸纹底图</label>
+      <div class="bg-swatches" id="bgSwatches"></div>
     </div>
 
     <div class="sec-title">左侧照片</div>
@@ -901,21 +912,57 @@ photoImg.addEventListener('dblclick', function(){
 /* ---------- 自动保存 / 恢复 ---------- */
 const BG_STYLE_KEY = 'wd_bg_style';
 function getBgStyle(){ try{ return localStorage.getItem(BG_STYLE_KEY) || 'paper'; }catch(e){ return 'paper'; } }
+const BG_COLOR_KEY = 'wd_bg_color';
+const BG_COLORS = { ivory:'#F7F3EA', blush:'#F8EFEC', champagne:'#F6EBD7', mist:'#EEF3F4', mistTeal:'#E6EFEC', stone:'#F4F3F0' };
+function getBgColor(){
+  try{ return localStorage.getItem(BG_COLOR_KEY) || ''; }catch(e){ return ''; }
+}
+function getCardBg(){
+  const c = getBgColor();
+  if (c && BG_COLORS[c]) return BG_COLORS[c];
+  return getBgStyle() === 'white' ? '#FFFFFF' : '#EEEBE6';
+}
 function applyBgStyle(){
   try{
     const st = getBgStyle();
+    const c = getBgColor();
     const w = document.getElementById('bg_white'), p = document.getElementById('bg_paper');
-    if (w) w.checked = (st === 'white');
-    if (p) p.checked = (st !== 'white');
+    if (w) w.checked = (st === 'white' && !c);
+    if (p) p.checked = (st !== 'white' && !c);
     const card = document.getElementById('captureDom');
-    if (card) card.classList.toggle('bg-white', st === 'white');
+    if (card){
+      card.classList.remove('bg-white','bg-ivory','bg-blush','bg-champagne','bg-mist','bg-mistTeal','bg-stone');
+      if (c && BG_COLORS[c]) card.classList.add('bg-' + c);
+      else if (st === 'white') card.classList.add('bg-white');
+    }
+    const sw = document.getElementById('bgSwatches');
+    if (sw){
+      [].forEach.call(sw.children, function(el){ el.classList.toggle('sel', el.getAttribute('data-color') === c); });
+    }
   }catch(e){}
 }
 (function(){
   const w = document.getElementById('bg_white'), p = document.getElementById('bg_paper');
   if (!w || !p) return;
-  w.addEventListener('change', function(){ if (this.checked){ try{ localStorage.setItem(BG_STYLE_KEY, 'white'); }catch(e){} applyBgStyle(); } });
-  p.addEventListener('change', function(){ if (this.checked){ try{ localStorage.setItem(BG_STYLE_KEY, 'paper'); }catch(e){} applyBgStyle(); } });
+  w.addEventListener('change', function(){ if (this.checked){ try{ localStorage.setItem(BG_STYLE_KEY, 'white'); localStorage.removeItem(BG_COLOR_KEY); }catch(e){} applyBgStyle(); } });
+  p.addEventListener('change', function(){ if (this.checked){ try{ localStorage.setItem(BG_STYLE_KEY, 'paper'); localStorage.removeItem(BG_COLOR_KEY); }catch(e){} applyBgStyle(); } });
+})();
+(function(){
+  const sw = document.getElementById('bgSwatches');
+  if (!sw) return;
+  ['ivory','blush','champagne','mist','mistTeal','stone'].forEach(function(n){
+    const d = document.createElement('div');
+    d.className = 'swatch';
+    d.setAttribute('data-color', n);
+    d.title = n;
+    d.style.background = BG_COLORS[n];
+    d.addEventListener('click', function(){
+      try{ localStorage.setItem(BG_COLOR_KEY, n); localStorage.setItem(BG_STYLE_KEY, 'paper'); }catch(e){}
+      applyBgStyle();
+    });
+    sw.appendChild(d);
+  });
+  applyBgStyle();
 })();
 /* 婚礼时间安排输入框：全角冒号自动转半角（保持光标位置，不干扰继续输入） */
 (function(){
@@ -1188,7 +1235,7 @@ $('#btn_export').addEventListener('click', async function(){
   btn.disabled = true;
   try{
     const canvas = await html2canvas($('#captureDom'), {
-      useCORS:true, scale:4, backgroundColor:(getBgStyle() === 'white' ? '#FFFFFF' : '#EEEBE6'), logging:false
+      useCORS:true, scale:4, backgroundColor:getCardBg(), logging:false
     });
     const dataUrl = canvas.toDataURL('image/png');
     saveToGallery('ritual');
@@ -1932,7 +1979,7 @@ $('#btn_saveGalleryRitual').addEventListener('click', async function(){
   btn.textContent = '保存中…';
   try{
     try{ if (document.fonts && document.fonts.ready) await document.fonts.ready; }catch(e){}
-    const canvas = await html2canvas($('#captureDom'), {useCORS:true, scale:4, backgroundColor:(getBgStyle() === 'white' ? '#FFFFFF' : '#EEEBE6'), logging:false});
+    const canvas = await html2canvas($('#captureDom'), {useCORS:true, scale:4, backgroundColor:getCardBg(), logging:false});
     saveToGallery('ritual');
   }catch(err){
     alert('保存失败，请重试。');
