@@ -353,6 +353,10 @@
       <label class="lbl"><b>婚礼日期</b></label>
       <input type="text" id="inp_date" value="">
     </div>
+    <div style="margin-bottom:10px;">
+      <label class="lbl"><b>沟通备忘</b><span class="val">与新人沟通要点：确定 / 暂定 / 注意事项</span></label>
+      <textarea id="inp_memo" rows="6"></textarea>
+    </div>
     <div>
       <label class="lbl"><b>流程清单</b><span class="val">每行一项</span></label>
       <textarea id="inp_flow" rows="11">主持人暖场
@@ -887,7 +891,7 @@ photoImg.addEventListener('dblclick', function(){
 /* ---------- 自动保存 / 恢复 ---------- */
 function save(){
   const data = {
-    name:$('#inp_name').value, hotel:$('#inp_hotel').value, date:$('#inp_date').value,
+    name:$('#inp_name').value, hotel:$('#inp_hotel').value, date:$('#inp_date').value, memo:$('#inp_memo').value,
     flow:$('#inp_flow').value, foot:$('#inp_foot').value, slogan:$('#inp_slogan').value,
     sloganEn:$('#inp_sloganEn').value, font:$('#inp_font').value, size:$('#inp_size').value,
     opacity:$('#inp_opacity').value, bw:$('#inp_bw').checked,
@@ -908,6 +912,7 @@ function restore(keepMeta){
       $('#inp_hotel').value = '';
       $('#inp_date').value = '';
     }
+    $('#inp_memo').value = d.memo || $('#inp_memo').value;
     $('#inp_flow').value = d.flow || $('#inp_flow').value;
     $('#inp_foot').value = d.foot || $('#inp_foot').value;
     $('#inp_slogan').value = d.slogan || $('#inp_slogan').value;
@@ -925,7 +930,7 @@ function restore(keepMeta){
 /* 重置仪式流程编辑器为初始空白模板（不含上一场内容与照片） */
 function resetRitualEditor(){
   try{
-    ['inp_name','inp_hotel','inp_date','inp_flow','inp_foot','inp_slogan','inp_sloganEn','inp_font','inp_size','inp_opacity'].forEach(function(id){
+    ['inp_name','inp_hotel','inp_date','inp_memo','inp_flow','inp_foot','inp_slogan','inp_sloganEn','inp_font','inp_size','inp_opacity'].forEach(function(id){
       const el = document.getElementById(id);
       if (!el) return;
       el.value = (el.defaultValue != null) ? el.defaultValue : '';
@@ -1670,7 +1675,7 @@ function compressPhoto(dataUrl, cb){
 }
 function collectRitualState(photo){
   return {
-    name:$('#inp_name').value, hotel:$('#inp_hotel').value, date:$('#inp_date').value,
+    name:$('#inp_name').value, hotel:$('#inp_hotel').value, date:$('#inp_date').value, memo:$('#inp_memo').value,
     flow:$('#inp_flow').value, foot:$('#inp_foot').value, slogan:$('#inp_slogan').value,
     sloganEn:$('#inp_sloganEn').value, font:$('#inp_font').value, size:$('#inp_size').value,
     opacity:$('#inp_opacity').value, bw:$('#inp_bw').checked,
