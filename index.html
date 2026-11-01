@@ -12,7 +12,7 @@
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:'Noto Serif SC','Songti SC','SimSun',serif;background:#f0ece6;color:#1a1a1a;}
   .wrap{max-width:1060px;margin:0 auto;padding:24px 16px 60px;display:flex;flex-direction:column;gap:28px;}
-  @media(min-width:1024px){.wrap{flex-direction:row;align-items:flex-start;}}
+  @media(min-width:900px){.wrap{flex-direction:row;align-items:flex-start;}}
 
   /* ===== 控制面板 ===== */
   .panel{width:100%;background:#fff;border-radius:14px;padding:22px 22px 26px;box-shadow:0 6px 20px rgba(0,0,0,.06);flex-shrink:0;}
@@ -116,7 +116,7 @@
 
   /* ===== 预览卡片（导出即为下图） ===== */
   .preview-box{flex:1;min-width:0;}
-  @media(min-width:1024px){
+  @media(min-width:900px){
     .preview-box{position:sticky;align-self:flex-start;}
   }
   .preview-box>h3{font-size:16px;font-weight:600;margin-bottom:12px;text-align:center;}
@@ -904,7 +904,7 @@ function stickPreviewCenter(){
   try{
     const pb = document.querySelector('.preview-box');
     if (!pb) return;
-    if (window.innerWidth < 1024) return;
+    if (window.innerWidth < 900) return;
     const h = pb.offsetHeight;
     const top = Math.max(10, Math.round((window.innerHeight - h) / 2));
     pb.style.top = top + 'px';
