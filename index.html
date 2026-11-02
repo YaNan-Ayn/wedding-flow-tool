@@ -1212,7 +1212,7 @@ function showPreview(src, isMobile, blob, dataUrl){
       };
     } else {
       saveBtn.href = src;
-      saveBtn.download = '婚礼流程单.png';
+      saveBtn.download = flowFileName();
     }
     btns.appendChild(saveBtn);
     if (isIOS){
@@ -1226,7 +1226,7 @@ function showPreview(src, isMobile, blob, dataUrl){
     // 分享图片（系统分享，可直接分享到微信）
     try{
       if (blob && navigator.canShare){
-        const f = new File([blob], '婚礼流程单.png', {type:'image/png'});
+        const f = new File([blob], flowFileName(), {type:'image/png'});
         if (navigator.canShare({files:[f]})){
           const shareBtn = mkBtn('分享图片', function(){
             navigator.share({files:[f], title:'婚礼流程单'}).catch(function(){});
@@ -1285,7 +1285,7 @@ $('#btn_export').addEventListener('click', async function(){
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = '婚礼流程单.png';
+            a.download = flowFileName();
             document.body.appendChild(a);
             a.click();
             setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 3000);
@@ -1294,7 +1294,7 @@ $('#btn_export').addEventListener('click', async function(){
       }catch(e){}
       try{
         const link = document.createElement('a');
-        link.download = '婚礼流程单.png';
+        link.download = flowFileName();
         link.href = dataUrl;
         document.body.appendChild(link);
         link.click();
@@ -1310,6 +1310,16 @@ $('#btn_export').addEventListener('click', async function(){
   btn.disabled = false;
 });
 
+function flowFileName(){
+  let d = '';
+  try{ d = ($('#inp_date').value || '').trim(); }catch(e){}
+  return '婚礼流程单' + d + '.png';
+}
+function schedFileName(){
+  let d = '';
+  try{ d = ($('#inp_schedDate').value || '').trim(); }catch(e){}
+  return '婚礼时间流程表' + d + '.png';
+}
 /* ---------- 事件 ---------- */
 ['inp_name','inp_hotel','inp_date','inp_flow','inp_foot','inp_slogan','inp_sloganEn'].forEach(id=>{
   $('#'+id).addEventListener('input', function(){ render(); save(); });
@@ -2115,7 +2125,7 @@ $('#btn_exportSched').addEventListener('click', async function(){
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = '婚礼时间流程表.png';
+            a.download = schedFileName();
             document.body.appendChild(a);
             a.click();
             setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 3000);
@@ -2124,7 +2134,7 @@ $('#btn_exportSched').addEventListener('click', async function(){
       }catch(e){}
       try{
         const link = document.createElement('a');
-        link.download = '婚礼时间流程表.png';
+        link.download = schedFileName();
         link.href = dataUrl;
         document.body.appendChild(link);
         link.click();
