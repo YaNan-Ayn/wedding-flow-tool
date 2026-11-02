@@ -152,7 +152,7 @@
   /* 左侧照片：框底与右侧备注末行对齐（bottom:0 不动）；框顶整体下移约10%使框变矮；照片填满黑框可拖动；黑线透明 */
   .photo{position:absolute;left:0;top:calc(-16px + 10%);bottom:0;width:128px;}
   .photo .ph-wrap{
-    width:128px;height:100%;border:1px solid transparent;overflow:hidden;background:#fff;
+    width:128px;height:100%;border:1px solid transparent;overflow:hidden;background:transparent;
     display:flex;flex-direction:column;justify-content:flex-end;
   }
   /* 照片层：可拖动照片（电脑鼠标 + 手机触屏）；img 按原图分辨率渲染，导出清晰 */
@@ -164,7 +164,7 @@
   .photo .ph-img img{position:absolute;display:block;max-width:none;-webkit-user-drag:none;user-drag:none;}
   .photo .ph-ph{
     width:100%;height:100%;display:flex;align-items:center;justify-content:center;
-    color:#c9c4bc;font-size:12px;background:#faf9f6;letter-spacing:2px;
+    color:#c9c4bc;font-size:12px;background:transparent;letter-spacing:2px;
   }
 
   .flow{margin-left:156px;text-align:right;}
