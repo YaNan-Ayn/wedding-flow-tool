@@ -865,6 +865,9 @@ function applyPhoto(){
     const scale = Math.max(cw / img.naturalWidth, ch / img.naturalHeight) * 1.04;
     imgW = img.naturalWidth * scale;
     imgH = img.naturalHeight * scale;
+    // 强制照片比照片框至少大 6px，四周盖满，避免边缘露出底色/白线
+    if (imgW < cw + 6) imgW = cw + 6;
+    if (imgH < ch + 6) imgH = ch + 6;
     photoImgEl.style.width = imgW + 'px';
     photoImgEl.style.height = imgH + 'px';
     positionPhoto();
