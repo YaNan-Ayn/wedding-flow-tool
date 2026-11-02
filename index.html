@@ -862,7 +862,7 @@ function applyPhoto(){
     $('#photoPh').style.display = 'none';
     // cover 放大：照片按原图比例放大铺满容器；额外放大 2% 确保完全覆盖、不留白缝
     const cw = photoImg.clientWidth, ch = photoImg.clientHeight;
-    const scale = Math.max(cw / img.naturalWidth, ch / img.naturalHeight) * 1.02;
+    const scale = Math.max(cw / img.naturalWidth, ch / img.naturalHeight) * 1.04;
     imgW = img.naturalWidth * scale;
     imgH = img.naturalHeight * scale;
     photoImgEl.style.width = imgW + 'px';
@@ -879,8 +879,12 @@ const photoImg = $('#photoImg');
 const photoImgEl = $('#photoImgEl');
 function positionPhoto(){
   const cw = photoImg.clientWidth, ch = photoImg.clientHeight;
-  photoImgEl.style.left = (cw - imgW) * posX / 100 + 'px';
-  photoImgEl.style.top = (ch - imgH) * posY / 100 + 'px';
+  let l = (cw - imgW) * posX / 100;
+  let t = (ch - imgH) * posY / 100;
+  if (l > -2) l = -2;
+  if (t > -2) t = -2;
+  photoImgEl.style.left = l + 'px';
+  photoImgEl.style.top = t + 'px';
 }
 function startDrag(cx, cy){ dragging = true; sx = cx; sy = cy; photoImg.classList.add('dragging'); }
 function moveDrag(cx, cy){
