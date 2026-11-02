@@ -2067,7 +2067,7 @@ function restoreSched(keepMeta){
     if (d.size) $('#inp_schedSize').value = d.size;
   }catch(e){}
 }
-['inp_schedTitle','inp_s1','inp_s2','inp_s3'].forEach(function(id){
+['inp_schedTitle','inp_schedDate','inp_s1','inp_s2','inp_s3'].forEach(function(id){
   $('#' + id).addEventListener('input', function(){ renderSched(); saveSched(); });
 });
 $('#inp_schedSize').addEventListener('input', function(){ renderSched(); saveSched(); });
