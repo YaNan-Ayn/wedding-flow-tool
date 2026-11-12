@@ -1383,6 +1383,16 @@ render();
 let backTarget = 'home';   // 编辑器返回目标：home 或 gallery
 let editingGalleryId = null;  // 当前正在编辑的作品库条目 id（用于覆盖保存，而不是重复新增）
 let editorDirty = false;  // 当前编辑器是否被改过文字/数字（返回时仅在改过的情况下自动保存）
+let entrySnapshots = {};   // 进入各编辑器时的内容基线快照（返回时比对，完全一致则不保存）
+let _enteringFromGallery = false;
+function snapState(type){
+  try{
+    if (type === 'ritual') return JSON.stringify(collectRitualState(rawPhoto || null));
+    if (type === 'schedule') return JSON.stringify(collectSchedState());
+    if (type === 'confirm') return JSON.stringify(collectConfirmState());
+  }catch(e){}
+  return null;
+}
 function updateBackLinks(){
   const t = backTarget === 'gallery' ? '#/gallery' : '#/';
   const l1 = $('#backLinkRitual'), l2 = $('#backLinkSched'), l3 = $('#backLinkConfirm');
@@ -1396,7 +1406,10 @@ document.querySelectorAll('.home-card').forEach(function(a){
 function showView(name){
   if (name === 'ritual' && typeof resetRitualEditor === 'function') resetRitualEditor();
   // 每次进入编辑器都视为“刚打开、未改动”，只有真正输入/改数字/拖照片才会点亮
-  if (name === 'ritual' || name === 'schedule' || name === 'confirm') editorDirty = false;
+  if (name === 'ritual' || name === 'schedule' || name === 'confirm'){
+    editorDirty = false;
+    if (!_enteringFromGallery) entrySnapshots[name] = snapState(name);
+  }
   ['home','ritual','schedule','confirm','gallery'].forEach(function(v){
     const el = $('#view_' + v);
     if (el) el.classList.toggle('active', v === name);
@@ -1939,7 +1952,8 @@ function autoSaveOnBack(){
   else if ($('#view_schedule') && $('#view_schedule').classList.contains('active')) type = 'schedule';
   else if ($('#view_confirm') && $('#view_confirm').classList.contains('active')) type = 'confirm';
   if (!type) return;
-  if (!editorDirty) return;
+  const cur = snapState(type);
+  if (entrySnapshots[type] != null && cur === entrySnapshots[type]) return;
   saveToGallery(type);
 }
 ['backLinkRitual','backLinkSched','backLinkConfirm'].forEach(function(id){
@@ -1994,6 +2008,7 @@ function openGalleryItem(id){
   editingGalleryId = item.id;
   backTarget = 'gallery';
   updateBackLinks();
+  _enteringFromGallery = true;
   if (item.type === 'ritual'){
     try{ localStorage.setItem(SAVE_KEY, JSON.stringify(item.state)); }catch(e){}
     showView('ritual');
@@ -2015,6 +2030,8 @@ function openGalleryItem(id){
     lastT1 = a[0]; lastT2 = a[1];
     location.hash = '#/schedule';
   }
+  _enteringFromGallery = false;
+  entrySnapshots[item.type] = snapState(item.type);
   window.scrollTo(0, 0);
   autoToast('已载入作品，可继续编辑');
 }
