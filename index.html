@@ -919,7 +919,7 @@ function moveDrag(cx, cy){
   if (imgH > h) posY = Math.max(0, Math.min(100, posY + dy / (imgH - h) * 100));
   positionPhoto();
 }
-function endDrag(){ dragging = false; photoImg.classList.remove('dragging'); }
+function endDrag(){ dragging = false; photoImg.classList.remove('dragging'); editorDirty = true; }
 
 // 鼠标
 photoImg.addEventListener('mousedown', function(e){ e.preventDefault(); startDrag(e.clientX, e.clientY); });
@@ -1061,10 +1061,12 @@ function restore(keepMeta){
     if (typeof d.py === 'number') posY = d.py;
     if (d.photo){ rawPhoto = d.photo; applyPhoto(); }
   }catch(e){}
+  editorDirty = false;
 }
 
 /* 重置仪式流程编辑器为初始空白模板（不含上一场内容与照片） */
 function resetRitualEditor(){
+  editorDirty = false;
   try{
     ['inp_name','inp_hotel','inp_date','inp_memo','inp_flow','inp_foot','inp_slogan','inp_sloganEn','inp_font','inp_size','inp_opacity'].forEach(function(id){
       const el = document.getElementById(id);
@@ -1380,6 +1382,7 @@ render();
 /* ===== 视图路由 ===== */
 let backTarget = 'home';   // 编辑器返回目标：home 或 gallery
 let editingGalleryId = null;  // 当前正在编辑的作品库条目 id（用于覆盖保存，而不是重复新增）
+let editorDirty = false;  // 当前编辑器是否被改过文字/数字（返回时仅在改过的情况下自动保存）
 function updateBackLinks(){
   const t = backTarget === 'gallery' ? '#/gallery' : '#/';
   const l1 = $('#backLinkRitual'), l2 = $('#backLinkSched'), l3 = $('#backLinkConfirm');
@@ -1934,12 +1937,18 @@ function autoSaveOnBack(){
   else if ($('#view_schedule') && $('#view_schedule').classList.contains('active')) type = 'schedule';
   else if ($('#view_confirm') && $('#view_confirm').classList.contains('active')) type = 'confirm';
   if (!type) return;
-  if (!editingGalleryId && !editorHasContent(type)) return;
+  if (!editorDirty) return;
   saveToGallery(type);
 }
 ['backLinkRitual','backLinkSched','backLinkConfirm'].forEach(function(id){
   var el = document.getElementById(id);
   if (el) el.addEventListener('click', autoSaveOnBack);
+});
+['view_ritual','view_schedule','view_confirm'].forEach(function(vid){
+  var el = document.getElementById(vid);
+  if (!el) return;
+  el.addEventListener('input', function(){ editorDirty = true; });
+  el.addEventListener('change', function(){ editorDirty = true; });
 });
 /* 作品库网格：小方块文字卡片（仪式=日期/新人/酒店，时间表=日期） */
 function renderGallery(){
@@ -2259,6 +2268,7 @@ function restoreSched(keepMeta){
     if (d.s3) $('#inp_s3').value = d.s3;
     if (d.size) $('#inp_schedSize').value = d.size;
   }catch(e){}
+  editorDirty = false;
 }
 ['inp_schedTitle','inp_schedDate','inp_s1','inp_s2','inp_s3'].forEach(function(id){
   $('#' + id).addEventListener('input', function(){ renderSched(); saveSched(); });
@@ -2382,6 +2392,7 @@ function restoreConfirm(keepMeta){
     if (d.note2 != null) $('#inp_cNote2').value = d.note2;
     if (d.note3 != null) $('#inp_cNote3').value = d.note3;
   }catch(e){}
+  editorDirty = false;
 }
 ['inp_cBrand','inp_cGroom','inp_cBride','inp_cDate','inp_cHost','inp_cPlace','inp_cTier','inp_cSignDate','inp_cPrice','inp_cDeposit','inp_cTerms','inp_cNote1','inp_cNote2','inp_cNote3'].forEach(function(id){
   $('#' + id).addEventListener('input', function(){ renderConfirm(); saveConfirm(); });
