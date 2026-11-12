@@ -1360,6 +1360,7 @@ render();
 
 /* ===== 视图路由 ===== */
 let backTarget = 'home';   // 编辑器返回目标：home 或 gallery
+let editingGalleryId = null;  // 当前正在编辑的作品库条目 id（用于覆盖保存，而不是重复新增）
 function updateBackLinks(){
   const t = backTarget === 'gallery' ? '#/gallery' : '#/';
   const l1 = $('#backLinkRitual'), l2 = $('#backLinkSched'), l3 = $('#backLinkConfirm');
@@ -1368,7 +1369,7 @@ function updateBackLinks(){
   if (l3) l3.href = t;
 }
 document.querySelectorAll('.home-card').forEach(function(a){
-  a.addEventListener('click', function(){ backTarget = 'home'; updateBackLinks(); });
+  a.addEventListener('click', function(){ backTarget = 'home'; editingGalleryId = null; updateBackLinks(); });
 });
 function showView(name){
   if (name === 'ritual' && typeof resetRitualEditor === 'function') resetRitualEditor();
@@ -1826,42 +1827,80 @@ function collectConfirmState(){
   };
 }
 /* 存入作品库：导出成功或手动点"存入作品库"时调用 */
+function galleryTitle(type){
+  return type === 'ritual'
+    ? ('婚礼仪式流程 · ' + ($('#inp_name').value || '未命名'))
+    : (type === 'confirm'
+        ? ('主持确认单 · ' + (($('#inp_cGroom').value || '') + ' & ' + ($('#inp_cBride').value || '')).trim(' & ') || '未命名')
+        : ('婚礼时间流程表 · ' + ($('#inp_schedTitle').value || '未命名')));
+}
+function galleryDateOf(type, state){
+  return (state.date || '').trim();
+}
+/* 存入作品库：编辑已有条目就覆盖，当天同类型没有才新建 */
 function saveToGallery(type){
-  const item = {
-    id: 'g' + Date.now() + '_' + Math.floor(Math.random() * 10000),
-    type: type,
-    title: type === 'ritual'
-      ? ('婚礼仪式流程 · ' + ($('#inp_name').value || '未命名'))
-      : (type === 'confirm'
-          ? ('主持确认单 · ' + (($('#inp_cGroom').value || '') + ' & ' + ($('#inp_cBride').value || '')).trim(' & ') || '未命名')
-          : ('婚礼时间流程表 · ' + ($('#inp_schedTitle').value || '未命名'))),
-    state: type === 'ritual' ? collectRitualState(null) : (type === 'confirm' ? collectConfirmState() : collectSchedState()),
-    time: Date.now()
-  };
+  const state = type === 'ritual' ? collectRitualState(null) : (type === 'confirm' ? collectConfirmState() : collectSchedState());
+  const payload = { type: type, title: galleryTitle(type), state: state, time: Date.now() };
   if (type === 'ritual' && rawPhoto){
     compressPhoto(rawPhoto, function(p){
-      item.state.photo = p;
-      pushGalleryItem(item);
+      payload.state.photo = p;
+      upsertGallery(payload);
     });
   } else {
-    pushGalleryItem(item);
+    upsertGallery(payload);
   }
 }
-async function pushGalleryItem(item){
+function editorHasContent(type){
+  if (type === 'ritual') return Boolean(($('#inp_date').value || '').trim() || ($('#inp_name').value || '').trim() || ($('#inp_flow').value || '').trim());
+  if (type === 'schedule') return Boolean(($('#inp_schedDate').value || '').trim() || ($('#inp_schedTitle').value || '').trim() || ($('#inp_s1').value || '').trim() || ($('#inp_s2').value || '').trim() || ($('#inp_s3').value || '').trim());
+  return Boolean(($('#inp_cGroom').value || '').trim() || ($('#inp_cBride').value || '').trim() || ($('#inp_cDate').value || '').trim());
+}
+async function upsertGallery(payload){
   let g = loadGallery();
+  let idx = -1;
+  // 1) 优先覆盖正在编辑的那一条
+  if (editingGalleryId){
+    for (let i = 0; i < g.length; i++){ if (g[i].id === editingGalleryId){ idx = i; break; } }
+  }
+  // 2) 没在编辑已有条目时，按（类型 + 婚礼日期）找到当天那一条覆盖
+  if (idx === -1){
+    const d = galleryDateOf(payload.type, payload.state);
+    if (d){
+      for (let i = 0; i < g.length; i++){
+        if (g[i].type === payload.type && galleryDateOf(g[i].type, g[i].state || {}) === d){ idx = i; break; }
+      }
+    }
+  }
+  if (idx >= 0){
+    const ex = g[idx];
+    ex.title = payload.title; ex.state = payload.state; ex.time = payload.time;
+    storeGallery(g);
+    editingGalleryId = ex.id;
+    if (ex.cloudId != null && isCloudReady()){
+      try{
+        const rdb = getRdb(); const uid = await cbGetOpenid();
+        if (rdb && uid) await rdb.from('gallery').update({ title: payload.title, state: payload.state, time: payload.time }).eq('id', ex.cloudId);
+      }catch(e){ cbHint('云端更新失败（本机已更新）：' + (e && e.message || e), true); }
+    }
+    autoToast('已保存并覆盖原作品');
+    if ($('#view_gallery').classList.contains('active')) renderGallery();
+    return;
+  }
+  // 3) 当天没有同类型作品 → 新建一条
+  const item = Object.assign({ id: 'g' + Date.now() + '_' + Math.floor(Math.random() * 10000) }, payload);
   g.unshift(item);
   if (g.length > GALLERY_MAX) g = g.slice(0, GALLERY_MAX);
   while (g.length > 1 && !storeGallery(g)){ g.pop(); }
   if (g.length === 1 && !storeGallery(g)){ alert('本机存储空间不足，无法存入作品库。\n请删除部分旧作品，或清除浏览器缓存后重试。'); return; }
-  // 已登录：写入云端（PostgreSQL gallery 表），成功后以云端为准刷新
+  editingGalleryId = item.id;
   if (isCloudReady()){
     try{
       const rdb = getRdb();
       const uid = await cbGetOpenid();
       if (rdb && uid){
-        const r = await rdb.from('gallery').insert({owner: uid, type: item.type, title: item.title, state: item.state, time: item.time});
+        const r = await rdb.from('gallery').insert({ owner: uid, type: item.type, title: item.title, state: item.state, time: item.time });
         const newId = r.data && r.data[0] && r.data[0].id;
-        if (newId != null){ item.cloudId = newId; item.id = 'c' + newId; }
+        if (newId != null){ item.cloudId = newId; item.id = 'c' + newId; editingGalleryId = item.id; storeGallery(g); }
         await syncFromCloud();
       }
     }catch(e){ cbHint('云端保存失败（本机已存）：' + (e && e.message || e), true); }
@@ -1869,6 +1908,20 @@ async function pushGalleryItem(item){
   autoToast('已存入作品库');
   if ($('#view_gallery').classList.contains('active')) renderGallery();
 }
+/* 返回时自动保存：正在编辑已有作品、或当前有内容时，覆盖当天那一条（不重复新增） */
+function autoSaveOnBack(){
+  let type = null;
+  if ($('#view_ritual') && $('#view_ritual').classList.contains('active')) type = 'ritual';
+  else if ($('#view_schedule') && $('#view_schedule').classList.contains('active')) type = 'schedule';
+  else if ($('#view_confirm') && $('#view_confirm').classList.contains('active')) type = 'confirm';
+  if (!type) return;
+  if (!editingGalleryId && !editorHasContent(type)) return;
+  saveToGallery(type);
+}
+['backLinkRitual','backLinkSched','backLinkConfirm'].forEach(function(id){
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('click', autoSaveOnBack);
+});
 /* 作品库网格：小方块文字卡片（仪式=日期/新人/酒店，时间表=日期） */
 function renderGallery(){
   trimLocalGallery();
@@ -1908,6 +1961,7 @@ function openGalleryItem(id){
   let item = null;
   g.forEach(function(x){ if (x.id === id) item = x; });
   if (!item) return;
+  editingGalleryId = item.id;
   backTarget = 'gallery';
   updateBackLinks();
   if (item.type === 'ritual'){
