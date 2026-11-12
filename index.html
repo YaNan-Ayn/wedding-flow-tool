@@ -1395,6 +1395,8 @@ document.querySelectorAll('.home-card').forEach(function(a){
 });
 function showView(name){
   if (name === 'ritual' && typeof resetRitualEditor === 'function') resetRitualEditor();
+  // 每次进入编辑器都视为“刚打开、未改动”，只有真正输入/改数字/拖照片才会点亮
+  if (name === 'ritual' || name === 'schedule' || name === 'confirm') editorDirty = false;
   ['home','ritual','schedule','confirm','gallery'].forEach(function(v){
     const el = $('#view_' + v);
     if (el) el.classList.toggle('active', v === name);
