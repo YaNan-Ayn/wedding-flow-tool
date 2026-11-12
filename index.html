@@ -188,6 +188,24 @@
   .gallery-head{position:relative;background:#fff;border-radius:14px;padding:24px 26px;box-shadow:0 6px 20px rgba(0,0,0,.06);margin-bottom:20px;}
   .btn-clean{position:absolute;top:22px;right:24px;background:#fff;color:#8a6d3b;border:1px solid #E7DCCB;border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer;}
   .btn-clean:hover{background:#faf6ef;}
+  .btn-trash{position:absolute;top:22px;right:132px;background:#fff;color:#8a6d3b;border:1px solid #E7DCCB;border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer;}
+  .btn-trash:hover{background:#faf6ef;}
+  .trash-mask{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;}
+  .trash-panel{background:#fff;border-radius:14px;width:min(480px,100%);max-height:82vh;display:flex;flex-direction:column;overflow:hidden;font-family:inherit;}
+  .trash-head{padding:16px 18px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;}
+  .trash-head h3{margin:0;font-size:16px;color:#222;}
+  .trash-close{border:none;background:#f0ece6;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:15px;color:#666;}
+  .trash-list{overflow:auto;padding:6px 18px;}
+  .trash-item{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #f2efe9;}
+  .trash-item:last-child{border-bottom:none;}
+  .trash-info{flex:1;min-width:0;}
+  .trash-date{font-size:13px;font-weight:600;color:#2c2c2c;}
+  .trash-meta{font-size:11px;color:#9a9a9a;margin-top:2px;line-height:1.5;word-break:break-all;}
+  .trash-btns{display:flex;gap:6px;flex-shrink:0;}
+  .trash-btn{padding:6px 12px;border-radius:8px;font-size:12px;cursor:pointer;border:1px solid #ddd;background:#fff;color:#555;}
+  .trash-btn.restore{background:#2c2c2c;color:#fff;border-color:#2c2c2c;}
+  .trash-btn.purge{background:#fff;color:#c23232;border-color:#e8c5c5;}
+  .trash-empty{padding:40px 20px;text-align:center;color:#9a9a9a;font-size:13px;line-height:1.8;}
   .gallery-head h2{font-size:20px;font-weight:600;letter-spacing:2px;}
   .gallery-head .sub{font-size:12.5px;color:#8a8a8a;margin-top:6px;line-height:1.7;}
   .gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:14px;}
@@ -748,6 +766,7 @@
   <div class="gallery-wrap">
     <div class="gallery-head">
       <h2>作品库</h2>
+      <button type="button" class="btn-trash" id="btnTrashBin">回收站</button>
       <button type="button" class="btn-clean" id="btnCleanLocal">清理本机缓存</button>
       <p class="sub">导出图片或点"存入作品库"后，作品会自动保存在这里。点击任一作品可回到编辑器继续编辑。</p>
     </div>
@@ -2017,21 +2036,123 @@ function confirmDialog(msg){
     mask.addEventListener('click', function(e){ if (e.target === mask) done(false); });
   });
 }
+const GALLERY_TRASH_KEY = 'weddingGallery_trash_v1';
+function loadTrash(){
+  try{ const t = JSON.parse(localStorage.getItem(GALLERY_TRASH_KEY)); return Array.isArray(t) ? t : []; }catch(e){ return []; }
+}
+function storeTrash(t){
+  try{ localStorage.setItem(GALLERY_TRASH_KEY, JSON.stringify(t)); return true; }catch(e){ return false; }
+}
+/* 删除：不直接删死，先挪进回收站（本机），同时从云端移除 */
 async function delGalleryItem(id){
-  if (!(await confirmDialog('删除这条作品？删除后不可恢复。'))) return;
-  const old = loadGallery().filter(function(x){ return x.id === id; })[0];
+  if (!(await confirmDialog('删除这条作品？\n会先放进回收站，还能随时恢复。'))) return;
+  let g = loadGallery();
+  const oldItem = g.filter(function(x){ return x.id === id; })[0];
+  if (oldItem){
+    const t = loadTrash();
+    oldItem.trashId = 't' + Date.now() + '_' + Math.floor(Math.random()*10000);
+    oldItem.deletedAt = Date.now();
+    t.unshift(oldItem);
+    if (t.length > 20) t = t.slice(0, 20);
+    storeTrash(t);
+  }
   // 已登录：同步删除云端（只删自己名下）
-  if (old && old.cloudId != null && isCloudReady()){
+  if (oldItem && oldItem.cloudId != null && isCloudReady()){
     try{
       const rdb = getRdb();
       const uid = await cbGetOpenid();
-      if (rdb && uid) await rdb.from('gallery').delete().eq('owner', uid).eq('id', old.cloudId);
+      if (rdb && uid) await rdb.from('gallery').delete().eq('owner', uid).eq('id', oldItem.cloudId);
     }catch(e){}
   }
-  const g = loadGallery().filter(function(x){ return x.id !== id; });
+  g = g.filter(function(x){ return x.id !== id; });
   storeGallery(g);
   renderGallery();
+  autoToast('已移到回收站，可在右上角找回');
 }
+function trashItemInfo(x){
+  const st = x.state || {};
+  const dateTxt = (st.date || st.signDate || '').trim();
+  const typeTxt = x.type === 'ritual' ? '仪式流程' : (x.type === 'confirm' ? '主持确认单' : '时间流程表');
+  let sub = '';
+  if (x.type === 'ritual') sub = [st.name, st.hotel].filter(Boolean).join(' · ');
+  else if (x.type === 'confirm') sub = ((st.groom||'') + ' & ' + (st.bride||'')).trim(' & ');
+  else sub = st.title || '';
+  return { date: dateTxt || '未填日期', type: typeTxt, sub: sub };
+}
+function openTrashBin(){
+  const old = document.getElementById('trashMask');
+  if (old) old.remove();
+  const t = loadTrash();
+  const mask = document.createElement('div');
+  mask.className = 'trash-mask';
+  mask.id = 'trashMask';
+  const panel = document.createElement('div');
+  panel.className = 'trash-panel';
+  let bodyHtml;
+  if (!t.length){
+    bodyHtml = '<div class="trash-empty">回收站是空的<br>误删的作品会先放在这里，可随时恢复</div>';
+  } else {
+    bodyHtml = '<div class="trash-list">' + t.map(function(x){
+      const info = trashItemInfo(x);
+      return '<div class="trash-item">'
+        + '<div class="trash-info"><div class="trash-date">' + escHtml(info.date) + '</div>'
+        + '<div class="trash-meta">' + escHtml(info.type) + (info.sub ? ' · ' + escHtml(info.sub) : '') + '</div></div>'
+        + '<div class="trash-btns">'
+        + '<button type="button" class="trash-btn restore" data-restore="' + escHtml(x.trashId) + '">恢复</button>'
+        + '<button type="button" class="trash-btn purge" data-purge="' + escHtml(x.trashId) + '">彻底删除</button>'
+        + '</div></div>';
+    }).join('') + '</div>';
+  }
+  panel.innerHTML = '<div class="trash-head"><h3>回收站（' + t.length + '）</h3>'
+    + '<button type="button" class="trash-close" id="trashClose">✕</button></div>' + bodyHtml;
+  mask.appendChild(panel);
+  document.body.appendChild(mask);
+  mask.addEventListener('click', function(e){ if (e.target === mask) mask.remove(); });
+  const closeBtn = document.getElementById('trashClose');
+  if (closeBtn) closeBtn.addEventListener('click', function(){ mask.remove(); });
+  panel.querySelectorAll('[data-restore]').forEach(function(b){
+    b.addEventListener('click', function(){ restoreTrashItem(b.getAttribute('data-restore')); });
+  });
+  panel.querySelectorAll('[data-purge]').forEach(function(b){
+    b.addEventListener('click', function(){ purgeTrashItem(b.getAttribute('data-purge')); });
+  });
+}
+async function restoreTrashItem(trashId){
+  let t = loadTrash();
+  const item = t.filter(function(x){ return x.trashId === trashId; })[0];
+  if (!item){ openTrashBin(); return; }
+  t = t.filter(function(x){ return x.trashId !== trashId; });
+  storeTrash(t);
+  delete item.deletedAt;
+  delete item.cloudId;
+  item.id = 'g' + Date.now() + '_' + Math.floor(Math.random()*10000);
+  const g = loadGallery();
+  g.unshift(item);
+  if (g.length > GALLERY_MAX) g = g.slice(0, GALLERY_MAX);
+  storeGallery(g);
+  if (isCloudReady()){
+    try{
+      const rdb = getRdb(); const uid = await cbGetOpenid();
+      if (rdb && uid){
+        const r = await rdb.from('gallery').insert({ owner: uid, type: item.type, title: item.title, state: item.state, time: item.time });
+        const newId = r.data && r.data[0] && r.data[0].id;
+        if (newId != null){ item.cloudId = newId; item.id = 'c' + newId; storeGallery(g); }
+        await syncFromCloud();
+      }
+    }catch(e){}
+  }
+  renderGallery();
+  autoToast('已恢复到作品库');
+  openTrashBin();
+}
+async function purgeTrashItem(trashId){
+  if (!(await confirmDialog('彻底删除后无法找回，确认？'))) return;
+  const t = loadTrash().filter(function(x){ return x.trashId !== trashId; });
+  storeTrash(t);
+  autoToast('已彻底删除');
+  openTrashBin();
+}
+document.getElementById('btnTrashBin').addEventListener('click', openTrashBin);
 /* 一键清理本机缓存（云端备份不受影响，清后自动从云端拉回） */
 $('#btnCleanLocal').addEventListener('click', async function(){
   if (!confirm('将清除本机缓存的草稿与作品，云端备份不受影响，清除后会自动从云端恢复作品。继续？')) return;
